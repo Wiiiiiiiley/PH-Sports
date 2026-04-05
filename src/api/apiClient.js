@@ -29,13 +29,9 @@ apiClient.interceptors.response.use(
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Handle unauthorized access (e.g., redirect to login)
       console.error('Unauthorized access - potential token expiration');
-      // Only clear token and redirect if it was 401 (unauthenticated)
+      // Only clear token if it was 401 (unauthenticated)
       if (error.response.status === 401) {
         localStorage.removeItem('ph_sports_access_token');
-        // Force redirect to login page if not already there
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
       }
     }
     return Promise.reject(error);

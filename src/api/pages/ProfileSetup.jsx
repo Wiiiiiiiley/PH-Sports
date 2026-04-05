@@ -76,7 +76,6 @@ export default function ProfileSetup({ onComplete }) {
       if (error.response?.status === 401) {
         // Interceptor should handle this, but let's be safe
         localStorage.removeItem('ph_sports_access_token');
-        setTimeout(() => window.location.href = '/login', 2000);
       }
     }
   };
