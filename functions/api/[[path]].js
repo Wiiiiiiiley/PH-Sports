@@ -574,7 +574,12 @@ export async function onRequest(context) {
             }
 
             if (method === 'DELETE' && id) {
-                if (!isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
+                const booking = await env.DB.prepare('SELECT * FROM venue_bookings WHERE id = ?').bind(id).first();
+                if (!booking) return jsonResponse({ error: 'Not found' }, 404);
+
+                const isOwner = booking.booked_by_email === currentUser.email;
+                if (!isAdmin && !isOwner) return jsonResponse({ error: 'Forbidden' }, 403);
+
                 return deleteEntity(null);
             }
 
@@ -614,7 +619,12 @@ export async function onRequest(context) {
                 });
             }
             if (method === 'DELETE' && id) {
-                if (!isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
+                const membership = await env.DB.prepare('SELECT * FROM team_memberships WHERE id = ?').bind(id).first();
+                if (!membership) return jsonResponse({ error: 'Not found' }, 404);
+
+                const isOwner = membership.user_email === currentUser.email;
+                if (!isAdmin && !isOwner) return jsonResponse({ error: 'Forbidden' }, 403);
+
                 return deleteEntity(null);
             }
             return jsonResponse({ error: 'Method not allowed' }, 405);
@@ -641,7 +651,12 @@ export async function onRequest(context) {
                 });
             }
             if (method === 'DELETE' && id) {
-                if (!isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
+                const ann = await env.DB.prepare('SELECT * FROM announcements WHERE id = ?').bind(id).first();
+                if (!ann) return jsonResponse({ error: 'Not found' }, 404);
+
+                const isOwner = ann.teacher_email === currentUser.email;
+                if (!isAdmin && !isOwner) return jsonResponse({ error: 'Forbidden' }, 403);
+
                 return deleteEntity(null);
             }
             return jsonResponse({ error: 'Method not allowed' }, 405);
