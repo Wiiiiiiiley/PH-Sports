@@ -13,7 +13,7 @@ export async function onRequest(context) {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token',
             }
         });
     };
@@ -37,7 +37,10 @@ export async function onRequest(context) {
         const getBearerToken = () => {
             const auth = request.headers.get('Authorization') || '';
             const match = auth.match(/^Bearer\s+(.+)$/i);
-            return match ? match[1] : null;
+            if (match) return match[1];
+            
+            // Fallback to custom header or query param
+            return request.headers.get('X-Auth-Token') || url.searchParams.get('token');
         };
 
         const sha256Hex = async (data) => {

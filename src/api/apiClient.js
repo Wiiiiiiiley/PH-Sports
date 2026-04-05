@@ -11,10 +11,16 @@ const apiClient = axios.create({
 // Request interceptor for adding auth token
 apiClient.interceptors.request.use(
   (config) => {
-    // Always get the freshest token from localStorage
     const token = localStorage.getItem('ph_sports_access_token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Use a more robust way to set headers for Axios 1.x
+      if (config.headers.set) {
+        config.headers.set('Authorization', `Bearer ${token}`);
+        config.headers.set('X-Auth-Token', token); // Fallback header
+      } else {
+        config.headers['Authorization'] = `Bearer ${token}`;
+        config.headers['X-Auth-Token'] = token;
+      }
     }
     return config;
   },
