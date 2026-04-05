@@ -15,6 +15,9 @@ import VenueBooking from '@/pages/VenueBooking';
 import ManageRequests from '@/pages/ManageRequests';
 import StudentProfile from '@/pages/StudentProfile';
 import AdminDashboard from '@/pages/AdminDashboard';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import PublicRoute from '@/components/PublicRoute';
 
 import { useState, useEffect } from 'react';
 import { api } from "@/api";
@@ -93,6 +96,16 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
+      <Route path="/login" element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      } />
+      <Route path="/register" element={
+        <PublicRoute>
+          <Register />
+        </PublicRoute>
+      } />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/teams" element={<Teams />} />
