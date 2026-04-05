@@ -19,10 +19,9 @@ apiClient.interceptors.request.use(
       // 2. Custom header fallback
       config.headers['X-Auth-Token'] = token;
       
-      // 3. Query parameter fallback (last resort)
-      const url = new URL(config.url, config.baseURL || window.location.origin);
-      url.searchParams.set('token', token);
-      config.url = url.pathname + url.search;
+      // 3. Query parameter fallback (last resort - using safer string manipulation)
+      const separator = config.url.includes('?') ? '&' : '?';
+      config.url = `${config.url}${separator}token=${encodeURIComponent(token)}`;
     }
     return config;
   },
