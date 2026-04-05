@@ -37,8 +37,8 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const { status } = error.response;
       if (status === 401) {
-        console.error('Unauthorized: Session might have expired or been cleared.');
-        localStorage.removeItem('ph_sports_access_token');
+        console.error('Unauthorized access - potential token expiration');
+        // Do NOT clear localStorage here, let AuthContext handle it to avoid race conditions
       } else if (status === 403) {
         console.error('Forbidden: You do not have permission for this action.');
       }

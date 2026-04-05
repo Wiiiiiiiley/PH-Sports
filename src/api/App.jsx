@@ -78,7 +78,9 @@ const AuthenticatedApp = () => {
     return <TeacherPendingScreen />;
   }
 
-  if (!profileComplete) {
+  const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+
+  if (!profileComplete && user && !isAuthPage) {
     return <ProfileSetup onComplete={async () => {
       await api.auth.me();
       setProfileComplete(true);

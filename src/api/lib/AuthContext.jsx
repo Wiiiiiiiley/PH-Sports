@@ -35,10 +35,11 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setUser(null);
       if (error.response && error.response.status === 401) {
+        // Only clear if we actually get a 401 from the server
         localStorage.removeItem('ph_sports_access_token');
         setAuthError({
           type: 'auth_required',
-          message: 'Session expired or invalid'
+          message: 'Session expired'
         });
       } else if (error.response && error.response.status === 403) {
         setAuthError({
