@@ -4,7 +4,7 @@ import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard, Users, ClipboardList, CalendarDays,
-  Menu, X, LogOut, CheckSquare, Trophy, UserCircle, ShieldCheck
+  Menu, X, LogOut, CheckSquare, Trophy, UserCircle, ShieldCheck, Megaphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const teacherNav = [
   { label: "My Teams", path: "/teams", icon: Users },
   { label: "Training Logs", path: "/training", icon: ClipboardList },
   { label: "Manage Requests", path: "/requests", icon: CheckSquare },
+  { label: "Announcements", path: "/announcements", icon: Megaphone },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },
 ];
 
@@ -31,18 +32,19 @@ const adminNav = [
   { label: "Admin Management", path: "/admin/panel", icon: Users },
   { label: "Teams", path: "/teams", icon: Users },
   { label: "Training Logs", path: "/training", icon: ClipboardList },
+  { label: "Announcements", path: "/announcements", icon: Megaphone },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },
 ];
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const role = user?.role || "student";
 
   const navItems = role === "teacher" ? teacherNav : role === "admin" ? adminNav : studentNav;
 
-  const handleLogout = () => api.auth.logout();
+  const handleLogout = () => logout();
 
   return (
     <div className="min-h-screen bg-background font-inter">

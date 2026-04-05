@@ -16,6 +16,7 @@ import ManageRequests from '@/pages/ManageRequests';
 import StudentProfile from '@/pages/StudentProfile';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminPanel from '@/pages/AdminPanel';
+import Announcements from '@/pages/Announcements';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import PublicRoute from '@/components/PublicRoute';
@@ -111,6 +112,11 @@ const AuthenticatedApp = () => {
         <Route path="/requests" element={
           <RoleRoute allowedRoles={['teacher', 'admin']}>
             <ManageRequests />
+          </RoleRoute>
+        } />
+        <Route path="/announcements" element={
+          <RoleRoute allowedRoles={['teacher', 'admin']}>
+            <Announcements />
           </RoleRoute>
         } />
         <Route path="/profile" element={<StudentProfile />} />
