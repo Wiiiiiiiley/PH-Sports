@@ -75,18 +75,24 @@ export async function onRequest(context) {
 
         const getUserBySession = async () => {
             const token = getBearerToken();
-            if (!token) return { error: 'No authorization token found in request headers' };
+            if (!token) {
+                const headerNames = [];
+                for (const [key] of request.headers.entries()) {
+                    headerNames.push(key);
+                }
+                return { error: `No authorization token found. Headers present: ${headerNames.join(', ')}` };
+            }
             
             const session = await env.DB.prepare('SELECT * FROM sessions WHERE token = ?').bind(token).first();
-            if (!session) return { error: `Session not found for token: ${token.slice(0, 8)}...` };
+            if (!session) return { error: `Session not found for token starting with: ${token.slice(0, 5)}` };
             
             if (new Date(session.expires_at).getTime() <= Date.now()) {
                 await deleteSession(token);
-                return { error: 'Session has expired' };
+                return { error: 'Session expired' };
             }
             
             const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(session.user_id).first();
-            if (!user) return { error: 'User associated with this session no longer exists' };
+            if (!user) return { error: 'User not found' };
             
             return { token, user };
         };

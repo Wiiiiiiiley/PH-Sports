@@ -13,14 +13,16 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('ph_sports_access_token');
     if (token) {
-      // Use a more robust way to set headers for Axios 1.x
-      if (config.headers.set) {
-        config.headers.set('Authorization', `Bearer ${token}`);
-        config.headers.set('X-Auth-Token', token); // Fallback header
-      } else {
-        config.headers['Authorization'] = `Bearer ${token}`;
-        config.headers['X-Auth-Token'] = token;
-      }
+      // 1. Standard Bearer token
+      config.headers['Authorization'] = `Bearer ${token}`;
+      
+      // 2. Custom header fallback
+      config.headers['X-Auth-Token'] = token;
+      
+      // 3. Query parameter fallback (last resort)
+      const url = new URL(config.url, config.baseURL || window.location.origin);
+      url.searchParams.set('token', token);
+      config.url = url.pathname + url.search;
     }
     return config;
   },
