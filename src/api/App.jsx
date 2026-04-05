@@ -58,6 +58,9 @@ const AuthenticatedApp = () => {
       }
       setProfileComplete(!!user.profile_complete);
       setCheckingProfile(false);
+    } else {
+      // If no user, set checkingProfile to false
+      setCheckingProfile(false);
     }
   }, [user]);
 
