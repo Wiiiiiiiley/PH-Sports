@@ -25,10 +25,25 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Replace with your actual auth endpoint
-      const currentUser = await apiClient.get('/auth/me');
-      setUser(currentUser);
-      setIsAuthenticated(true);
+      // Static mode for production
+      if (import.meta.env.MODE === 'production') {
+        // Mock user data for static mode
+        const mockUser = {
+          id: 1,
+          email: 'demo@sportsync.edu',
+          name: 'Demo User',
+          role: 'admin',
+          profile_complete: true,
+          teacher_status: 'approved'
+        };
+        setUser(mockUser);
+        setIsAuthenticated(true);
+      } else {
+        // Development mode - call actual API
+        const currentUser = await apiClient.get('/auth/me');
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      }
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsAuthenticated(false);
