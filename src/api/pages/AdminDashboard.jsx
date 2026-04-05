@@ -20,27 +20,27 @@ export default function AdminDashboard() {
 
   const { data: registrations = [] } = useQuery({
     queryKey: ["teacher-registrations"],
-    queryFn: () => api.entities.TeacherRegistration.list("-created_date", 100),
+    queryFn: () => api.entities.TeacherRegistration.list("-created_at", 100),
   });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ["all-users"],
-    queryFn: () => api.entities.User.list("-created_date", 200),
+    queryFn: () => api.entities.User.list("-created_at", 200),
   });
 
   const { data: allBookings = [] } = useQuery({
     queryKey: ["admin-bookings"],
-    queryFn: () => api.entities.VenueBooking.list("-created_date", 200),
+    queryFn: () => api.entities.VenueBooking.list("-created_at", 200),
   });
 
   const { data: allAnnouncements = [] } = useQuery({
     queryKey: ["admin-announcements"],
-    queryFn: () => api.entities.Announcement.list("-created_date", 100),
+    queryFn: () => api.entities.Announcement.list("-created_at", 100),
   });
 
   const { data: allMemberships = [] } = useQuery({
     queryKey: ["admin-memberships"],
-    queryFn: () => api.entities.TeamMembership.list("-created_date", 500),
+    queryFn: () => api.entities.TeamMembership.list("-created_at", 500),
   });
 
   const updateRegistration = useMutation({
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                       <p className="font-medium text-sm">{reg.user_name}</p>
                       <p className="text-xs text-muted-foreground">{reg.user_email} · Staff ID: {reg.staff_id}</p>
                       <p className="text-xs text-muted-foreground">{SPORT_ICONS[reg.sport_coached]} Wants to coach {reg.sport_coached}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(reg.created_date), "MMM d, yyyy")}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(reg.created_at), "MMM d, yyyy")}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8" onClick={() => handleApprove(reg)}>
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
               <CardContent className="p-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-sm">{SPORT_ICONS[a.sport]} {a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.teacher_name} · {format(new Date(a.created_date), "MMM d, yyyy")}</p>
+                  <p className="text-xs text-muted-foreground">{a.teacher_name} · {format(new Date(a.created_at), "MMM d, yyyy")}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteAnnouncement.mutate(a.id)}>
                   <Trash2 className="h-4 w-4" />

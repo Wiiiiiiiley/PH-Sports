@@ -53,8 +53,8 @@ export default function Dashboard() {
   const { data: announcements = [] } = useQuery({
     queryKey: ["announcements-dash", user?.email],
     queryFn: () => {
-      if (isTeacher) return api.entities.Announcement.filter({ teacher_email: user.email }, "-created_date", 5);
-      return api.entities.Announcement.list("-created_date", 10);
+      if (isTeacher) return api.entities.Announcement.filter({ teacher_email: user.email }, "-created_at", 5);
+      return api.entities.Announcement.list("-created_at", 100);
     },
   });
 
@@ -121,7 +121,7 @@ export default function Dashboard() {
                   {ann.priority === "important" && <Badge className="text-[10px] px-1.5 py-0 bg-chart-3 text-white">Important</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2">{ann.content}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{ann.teacher_name} · {format(new Date(ann.created_date), "MMM d")}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{ann.teacher_name} · {format(new Date(ann.created_at), "MMM d")}</p>
               </div>
             ))}
           </CardContent>

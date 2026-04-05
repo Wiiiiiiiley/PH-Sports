@@ -32,7 +32,7 @@ export default function Teams() {
     queryKey: ["memberships"],
     queryFn: () => {
       if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
-      if (isAdmin) return api.entities.TeamMembership.list("-created_date", 500);
+      if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
       return api.entities.TeamMembership.filter({ user_email: user.email });
     },
   });
@@ -40,8 +40,8 @@ export default function Teams() {
   const { data: announcements = [] } = useQuery({
     queryKey: ["team-announcements"],
     queryFn: () => {
-      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_date", 20);
-      return api.entities.Announcement.list("-created_date", 50);
+      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_at", 20);
+      return api.entities.Announcement.list("-created_at", 50);
     },
   });
 
@@ -183,7 +183,7 @@ export default function Teams() {
                     {ann.priority === "important" && <Badge className="text-[10px] bg-chart-3 text-white">Important</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground">{ann.content}</p>
-                  <p className="text-xs text-muted-foreground mt-2">By {ann.teacher_name} · {format(new Date(ann.created_date), "MMM d, yyyy")}</p>
+                  <p className="text-xs text-muted-foreground mt-2">By {ann.teacher_name} · {format(new Date(ann.created_at), "MMM d, yyyy")}</p>
                 </CardContent>
               </Card>
             ))}

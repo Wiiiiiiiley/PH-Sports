@@ -52,7 +52,7 @@ export default function VenueBooking() {
 
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings"],
-    queryFn: () => api.entities.VenueBooking.list("-date", 500),
+    queryFn: () => api.entities.VenueBooking.list("-created_at", 500),
   });
 
   const { data: memberships = [] } = useQuery({

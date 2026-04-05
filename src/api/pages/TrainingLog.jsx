@@ -26,7 +26,7 @@ export default function TrainingLog() {
   const { data: memberships = [] } = useQuery({
     queryKey: ["my-memberships"],
     queryFn: () => {
-      if (user?.role === "admin") return api.entities.TeamMembership.list("-created_date", 500);
+      if (user?.role === "admin") return api.entities.TeamMembership.list("-created_at", 500);
       if (user?.role === "teacher") return api.entities.TeamMembership.filter({ sport: user.sport_coached });
       return api.entities.TeamMembership.filter({ user_email: user.email });
     },

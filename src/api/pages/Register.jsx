@@ -15,7 +15,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'student',
+    role: 'student', // Can be student or teacher, but not admin
     sports: []
   });
   const [loading, setLoading] = useState(false);
@@ -33,28 +33,30 @@ const Register = () => {
     }
 
     try {
-      // Static mode - mock registration
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await api.auth.register({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.name,
+      });
+
+      if (result?.token) {
+        localStorage.setItem('ph_sports_access_token', result.token);
         
-        // Store user data in localStorage for demo
-        const userData = {
-          ...formData,
-          id: Date.now(),
-          created_at: new Date().toISOString()
-        };
-        localStorage.setItem('ph_sports_user_data', JSON.stringify(userData));
-        
-        // Mock successful registration - redirect to login
-        window.location.href = '/login';
-      } catch (err) {
-        setError('注册失败，请重试');
-      } finally {
-        setLoading(false);
+        // If student, join teams
+        if (formData.role === 'student' && formData.sports.length > 0) {
+          await Promise.all(formData.sports.map(sport => 
+            api.entities.TeamMembership.create({ sport })
+          ));
+        }
+
+        // If teacher, apply for status (profile setup will handle this usually, but we can initiate here)
+        // Actually, the profile setup flow is better for this.
       }
+
+      window.location.href = '/';
     } catch (err) {
-      setError('注册失败，请重试');
+      const message = err?.response?.data?.error || err?.message || '注册失败，请重试';
+      setError(message);
     } finally {
       setLoading(false);
     }

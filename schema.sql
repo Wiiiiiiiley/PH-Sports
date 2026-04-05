@@ -5,8 +5,13 @@ CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
+    password_hash TEXT,
+    password_salt TEXT,
     role TEXT DEFAULT 'student', -- 'student', 'teacher', 'admin'
     sport_coached TEXT,
+    staff_id TEXT,
+    student_id TEXT,
+    grade TEXT,
     profile_complete BOOLEAN DEFAULT FALSE,
     teacher_status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -16,11 +21,20 @@ CREATE TABLE IF NOT EXISTS users (
 -- Teacher Registrations (Pending Applications)
 CREATE TABLE IF NOT EXISTS teacher_registrations (
     id TEXT PRIMARY KEY,
-    user_id TEXT,
-    full_name TEXT,
-    email TEXT,
-    sport TEXT,
+    user_email TEXT,
+    user_name TEXT,
+    staff_id TEXT,
+    sport_coached TEXT,
     status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    admin_comment TEXT
+);
+
+-- Sessions Table (Auth)
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -48,16 +62,18 @@ CREATE TABLE IF NOT EXISTS team_memberships (
 -- Venue Bookings
 CREATE TABLE IF NOT EXISTS venue_bookings (
     id TEXT PRIMARY KEY,
-    user_id TEXT,
-    user_name TEXT,
-    venue_name TEXT NOT NULL,
-    booking_date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
+    booked_by_email TEXT NOT NULL,
+    booked_by_name TEXT,
+    sport TEXT NOT NULL,
+    venue TEXT NOT NULL,
+    date DATE NOT NULL,
+    time_slot TEXT NOT NULL,
+    duration INTEGER,
     purpose TEXT,
     status TEXT DEFAULT 'pending',
+    teacher_comment TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Announcements
@@ -80,7 +96,9 @@ CREATE TABLE IF NOT EXISTS training_logs (
     sport TEXT,
     date DATE NOT NULL,
     duration INTEGER, -- in minutes
+    session_type TEXT,
     intensity TEXT,
     notes TEXT,
+    data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

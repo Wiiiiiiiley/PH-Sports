@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-import apiClient from '@/apiClient';
+import { api } from '@/api';
 import { appParams } from '@/lib/app-params';
 
 const AuthContext = createContext(null);
@@ -21,32 +21,18 @@ export const AuthProvider = ({ children }) => {
       
       if (!token) {
         setIsAuthenticated(false);
+        setUser(null);
         setIsLoadingAuth(false);
         return;
       }
 
-      // Static mode for production
-      if (import.meta.env.MODE === 'production') {
-        // Mock user data for static mode
-        const mockUser = {
-          id: 1,
-          email: 'demo@sportsync.edu',
-          name: 'Demo User',
-          role: 'admin',
-          profile_complete: true,
-          teacher_status: 'approved'
-        };
-        setUser(mockUser);
-        setIsAuthenticated(true);
-      } else {
-        // Development mode - call actual API
-        const currentUser = await apiClient.get('/auth/me');
-        setUser(currentUser);
-        setIsAuthenticated(true);
-      }
+      const currentUser = await api.auth.me();
+      setUser(currentUser);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsAuthenticated(false);
+      setUser(null);
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
         setAuthError({
           type: 'auth_required',
@@ -58,13 +44,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('ph_sports_access_token');
-    // Optional: call logout endpoint
-    // apiClient.post('/auth/logout').catch(() => {});
-    window.location.href = '/';
+  const logout = async () => {
+    try {
+      await api.auth.logout();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('ph_sports_access_token');
+      window.location.href = '/login';
+    }
   };
 
   const navigateToLogin = () => {

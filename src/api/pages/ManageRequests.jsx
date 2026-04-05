@@ -24,7 +24,10 @@ export default function ManageRequests() {
 
   const { data: bookings = [] } = useQuery({
     queryKey: ["all-bookings-manage"],
-    queryFn: () => api.entities.VenueBooking.filter({ sport: user.sport_coached }, "-created_date", 100),
+    queryFn: () => {
+      if (user.role === 'admin') return api.entities.VenueBooking.list("-created_at", 500);
+      return api.entities.VenueBooking.filter({ sport: user.sport_coached }, "-created_at", 100);
+    },
   });
 
   const updateBooking = useMutation({
@@ -43,7 +46,35 @@ export default function ManageRequests() {
     setActionType(type);
   };
 
+  const isAdmin = user.role === 'admin';
+
+  const { data: teacherRequests = [] } = useQuery({
+    queryKey: ["teacher-registrations"],
+    queryFn: () => api.entities.TeacherRegistration.list("-created_at", 100),
+    enabled: isAdmin,
+  });
+
+  const updateTeacherReg = useMutation({
+    mutationFn: ({ id, data }) => api.entities.TeacherRegistration.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teacher-registrations"] });
+      setActionBooking(null);
+      setComment("");
+      toast.success("Teacher registration updated!");
+    },
+  });
+
   const confirmAction = () => {
+    if (actionBooking.type === 'teacher') {
+      updateTeacherReg.mutate({
+        id: actionBooking.id,
+        data: {
+          status: actionType === "approve" ? "approved" : "rejected",
+          admin_comment: comment,
+        },
+      });
+      return;
+    }
     updateBooking.mutate({
       id: actionBooking.id,
       data: {
@@ -55,6 +86,44 @@ export default function ManageRequests() {
 
   const pending = bookings.filter(b => b.status === "pending");
   const processed = bookings.filter(b => b.status !== "pending");
+  const pendingTeachers = teacherRequests.filter(r => r.status === "pending");
+  const processedTeachers = teacherRequests.filter(r => r.status !== "pending");
+
+  const TeacherCard = ({ reg, showActions }) => (
+    <Card className="border-0 shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-sm">Teacher Registration</span>
+              <Badge className={cn(
+                "text-[10px]",
+                reg.status === "approved" && "bg-green-100 text-green-700",
+                reg.status === "pending" && "bg-yellow-100 text-yellow-700",
+                reg.status === "rejected" && "bg-red-100 text-red-700",
+              )}>{reg.status}</Badge>
+            </div>
+            <div className="space-y-0.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1"><User className="h-3 w-3" />{reg.user_name} ({reg.user_email})</div>
+              <div className="flex items-center gap-1"><span className="h-3 w-3">{SPORT_ICONS[reg.sport_coached]}</span>Sport: {reg.sport_coached}</div>
+              <div className="flex items-center gap-1">Staff ID: {reg.staff_id}</div>
+              <div className="flex items-center gap-1"><Clock className="h-3 w-3" />Applied: {format(new Date(reg.created_at), "MMM d, yyyy")}</div>
+            </div>
+          </div>
+          {showActions && (
+            <div className="flex gap-1.5 shrink-0">
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 h-8" onClick={() => handleAction({ ...reg, type: 'teacher' }, "approve")}>
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />Approve
+              </Button>
+              <Button size="sm" variant="destructive" className="h-8" onClick={() => handleAction({ ...reg, type: 'teacher' }, "reject")}>
+                <XCircle className="h-3.5 w-3.5 mr-1" />Reject
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   const BookingCard = ({ booking, showActions }) => (
     <Card className="border-0 shadow-sm">
@@ -97,23 +166,31 @@ export default function ManageRequests() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Manage Requests</h1>
-        <p className="text-muted-foreground text-sm mt-1">Review and manage venue booking requests for {user.sport_coached}</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          {isAdmin ? "Review and manage all system requests" : `Review and manage venue booking requests for ${user.sport_coached}`}
+        </p>
       </div>
 
       <Tabs defaultValue="pending">
         <TabsList>
-          <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
-          <TabsTrigger value="processed">Processed ({processed.length})</TabsTrigger>
+          <TabsTrigger value="pending">Pending ({pending.length + pendingTeachers.length})</TabsTrigger>
+          <TabsTrigger value="processed">Processed ({processed.length + processedTeachers.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="mt-4 space-y-3">
-          {pending.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No pending requests</p>}
+          {isAdmin && pendingTeachers.map(r => <TeacherCard key={r.id} reg={r} showActions />)}
           {pending.map(b => <BookingCard key={b.id} booking={b} showActions />)}
+          {pending.length === 0 && (!isAdmin || pendingTeachers.length === 0) && (
+            <p className="text-sm text-muted-foreground text-center py-8">No pending requests</p>
+          )}
         </TabsContent>
 
         <TabsContent value="processed" className="mt-4 space-y-3">
-          {processed.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No processed requests</p>}
+          {isAdmin && processedTeachers.map(r => <TeacherCard key={r.id} reg={r} showActions={false} />)}
           {processed.map(b => <BookingCard key={b.id} booking={b} showActions={false} />)}
+          {processed.length === 0 && (!isAdmin || processedTeachers.length === 0) && (
+            <p className="text-sm text-muted-foreground text-center py-8">No processed requests</p>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -121,13 +198,17 @@ export default function ManageRequests() {
       <Dialog open={!!actionBooking} onOpenChange={() => setActionBooking(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{actionType === "approve" ? "Approve" : "Reject"} Booking</DialogTitle>
+            <DialogTitle>{actionType === "approve" ? "Approve" : "Reject"} {actionBooking?.type === 'teacher' ? 'Teacher Registration' : 'Booking'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {actionType === "approve" ? "Approve" : "Reject"} the booking by <strong>{actionBooking?.booked_by_name}</strong> for{" "}
-              <strong>{actionBooking?.venue}</strong> on{" "}
-              <strong>{actionBooking?.date && format(new Date(actionBooking.date), "MMM d, yyyy")}</strong>?
+              {actionType === "approve" ? "Approve" : "Reject"} the {actionBooking?.type === 'teacher' ? 'registration' : 'booking'} by <strong>{actionBooking?.booked_by_name || actionBooking?.user_name}</strong>
+              {actionBooking?.type !== 'teacher' && (
+                <>
+                  {" "}for <strong>{actionBooking?.venue}</strong> on{" "}
+                  <strong>{actionBooking?.date && format(new Date(actionBooking.date), "MMM d, yyyy")}</strong>
+                </>
+              )}?
             </p>
             <div>
               <Label>Comment (optional)</Label>
@@ -139,9 +220,9 @@ export default function ManageRequests() {
                 className={cn("flex-1", actionType === "approve" ? "bg-green-600 hover:bg-green-700" : "")}
                 variant={actionType === "reject" ? "destructive" : "default"}
                 onClick={confirmAction}
-                disabled={updateBooking.isPending}
+                disabled={updateBooking.isPending || updateTeacherReg.isPending}
               >
-                {updateBooking.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {(updateBooking.isPending || updateTeacherReg.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Confirm {actionType === "approve" ? "Approval" : "Rejection"}
               </Button>
             </div>

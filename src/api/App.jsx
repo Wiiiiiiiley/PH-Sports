@@ -15,18 +15,18 @@ import VenueBooking from '@/pages/VenueBooking';
 import ManageRequests from '@/pages/ManageRequests';
 import StudentProfile from '@/pages/StudentProfile';
 import AdminDashboard from '@/pages/AdminDashboard';
+import AdminPanel from '@/pages/AdminPanel';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import PublicRoute from '@/components/PublicRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import RoleRoute from '@/components/RoleRoute';
 
 import { useState, useEffect } from 'react';
 import { api } from "@/api";
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Clock } from 'lucide-react';
-
-// Hardcoded admin email
-const ADMIN_EMAIL = "admin@sportsync.edu";
 
 const TeacherPendingScreen = () => (
   <div className="min-h-screen bg-background flex items-center justify-center p-4 font-inter">
@@ -52,10 +52,6 @@ const AuthenticatedApp = () => {
 
   useEffect(() => {
     if (user) {
-      // Auto-assign admin role for hardcoded admin email
-      if (user.email === ADMIN_EMAIL && user.role !== "admin") {
-        api.auth.updateMe({ role: "admin", profile_complete: true });
-      }
       setProfileComplete(!!user.profile_complete);
       setCheckingProfile(false);
     } else {
@@ -75,14 +71,6 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') return <UserNotRegisteredError />;
     if (authError.type === 'auth_required') { navigateToLogin(); return null; }
-  }
-
-  // Admin bypass: always has full access
-  if (user?.email === ADMIN_EMAIL || user?.role === "admin") {
-    if (!user?.profile_complete) {
-      api.auth.updateMe({ role: "admin", profile_complete: true });
-      return <div className="fixed inset-0 flex items-center justify-center bg-background"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div></div>;
-    }
   }
 
   // Teacher pending: block login until approved
@@ -109,14 +97,31 @@ const AuthenticatedApp = () => {
           <Register />
         </PublicRoute>
       } />
-      <Route element={<AppLayout />}>
+      <Route element={
+        <ProtectedRoute>
+          <AppLayout />
+        </ProtectedRoute>
+      }>
         <Route path="/" element={<Dashboard />} />
         <Route path="/teams" element={<Teams />} />
         <Route path="/training" element={<TrainingLog />} />
         <Route path="/booking" element={<VenueBooking />} />
-        <Route path="/requests" element={<ManageRequests />} />
+        <Route path="/requests" element={
+          <RoleRoute allowedRoles={['teacher', 'admin']}>
+            <ManageRequests />
+          </RoleRoute>
+        } />
         <Route path="/profile" element={<StudentProfile />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={
+          <RoleRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </RoleRoute>
+        } />
+        <Route path="/admin/panel" element={
+          <RoleRoute allowedRoles={['admin']}>
+            <AdminPanel />
+          </RoleRoute>
+        } />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

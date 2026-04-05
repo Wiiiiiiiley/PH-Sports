@@ -28,6 +28,7 @@ const teacherNav = [
 const adminNav = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
   { label: "Admin Panel", path: "/admin", icon: ShieldCheck },
+  { label: "Admin Management", path: "/admin/panel", icon: Users },
   { label: "Teams", path: "/teams", icon: Users },
   { label: "Training Logs", path: "/training", icon: ClipboardList },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },

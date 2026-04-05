@@ -20,11 +20,19 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await api.auth.login(formData);
-      localStorage.setItem('ph_sports_access_token', response.token);
+      const result = await api.auth.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result?.token) {
+        localStorage.setItem('ph_sports_access_token', result.token);
+      }
+
       window.location.href = '/';
     } catch (err) {
-      setError('登录失败，请检查邮箱和密码');
+      const message = err?.response?.data?.error || err?.message || '登录失败，请检查邮箱和密码';
+      setError(message);
     } finally {
       setLoading(false);
     }
