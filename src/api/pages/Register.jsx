@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import { api } from '@/api';
+import { ALL_SPORTS, SPORT_ICONS } from '@/lib/sports-config';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +15,8 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'student'
+    role: 'student',
+    sports: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,18 +33,40 @@ const Register = () => {
     }
 
     try {
-      await api.auth.register({
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        role: formData.role
-      });
-      window.location.href = '/login';
+      // Static mode - mock registration
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Store user data in localStorage for demo
+        const userData = {
+          ...formData,
+          id: Date.now(),
+          created_at: new Date().toISOString()
+        };
+        localStorage.setItem('ph_sports_user_data', JSON.stringify(userData));
+        
+        // Mock successful registration - redirect to login
+        window.location.href = '/login';
+      } catch (err) {
+        setError('注册失败，请重试');
+      } finally {
+        setLoading(false);
+      }
     } catch (err) {
       setError('注册失败，请重试');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSportToggle = (sport) => {
+    setFormData(prev => ({
+      ...prev,
+      sports: prev.sports.includes(sport)
+        ? prev.sports.filter(s => s !== sport)
+        : [...prev.sports, sport]
+    }));
   };
 
   const handleChange = (e) => {
@@ -102,6 +127,29 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Sports Selection for Students */}
+            {formData.role === 'student' && (
+              <div className="space-y-3">
+                <Label>选择运动队 (可多选)</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto">
+                  {ALL_SPORTS.map(sport => (
+                    <div key={sport} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={sport}
+                        checked={formData.sports.includes(sport)}
+                        onCheckedChange={() => handleSportToggle(sport)}
+                      />
+                      <Label htmlFor={sport} className="text-sm flex items-center">
+                        <span className="mr-1">{SPORT_ICONS[sport]}</span>
+                        {sport}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="password">密码</Label>
               <Input
