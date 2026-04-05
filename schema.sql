@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     staff_id TEXT,
     student_id TEXT,
     grade TEXT,
+    gender TEXT, -- 'male', 'female', 'other'
     profile_complete BOOLEAN DEFAULT FALSE,
     teacher_status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -236,11 +236,14 @@ export async function onRequest(context) {
 
                 const allowed = [
                     'full_name',
+                    'email',
+                    'password',
                     'profile_complete',
                     'sport_coached',
                     'staff_id',
                     'student_id',
                     'grade',
+                    'gender',
                     'role',
                     'teacher_status'
                 ];
@@ -250,6 +253,20 @@ export async function onRequest(context) {
                     if (Object.prototype.hasOwnProperty.call(body, key)) {
                         updates[key] = body[key];
                     }
+                }
+
+                // Special handling for email change
+                if (updates.email && updates.email !== auth.user.email) {
+                    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(updates.email).first();
+                    if (existing) return jsonResponse({ error: 'Email already in use' }, 409);
+                }
+
+                // Special handling for password change
+                if (updates.password) {
+                    const { salt, hash } = await createPasswordHash(String(updates.password));
+                    updates.password_hash = hash;
+                    updates.password_salt = salt;
+                    delete updates.password;
                 }
 
                 if (Object.prototype.hasOwnProperty.call(updates, 'role') || Object.prototype.hasOwnProperty.call(updates, 'teacher_status')) {
