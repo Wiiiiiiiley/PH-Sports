@@ -2,6 +2,10 @@ name = "ph-sports"
 compatibility_date = "2024-03-01"
 pages_build_output_dir = "dist"
 
+[vars]
+# You can add your VITE_API_BASE_URL here or in the Cloudflare dashboard
+# VITE_API_BASE_URL = "https://your-api.com"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "ph-sports-db"
