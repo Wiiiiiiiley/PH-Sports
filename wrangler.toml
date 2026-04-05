@@ -1,0 +1,8 @@
+name = "ph-sports"
+compatibility_date = "2024-03-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ph-sports-db"
+database_id = "cb30a31c-c171-47f2-9762-0e80a66d88cc"

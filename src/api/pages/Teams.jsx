@@ -1,0 +1,199 @@
+import React, { useState } from "react";
+import { api } from "@/api";
+import { useAuth } from "@/lib/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Megaphone, Loader2, Trophy } from "lucide-react";
+import { ALL_SPORTS, SPORT_ICONS, SPORT_COLORS } from "@/lib/sports-config";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import Leaderboard from "@/components/teams/Leaderboard";
+
+export default function Teams() {
+  const { user } = useAuth();
+  const isTeacher = user?.role === "teacher";
+  const isAdmin = user?.role === "admin";
+  const queryClient = useQueryClient();
+  const [announcementOpen, setAnnouncementOpen] = useState(false);
+  const [annTitle, setAnnTitle] = useState("");
+  const [annContent, setAnnContent] = useState("");
+  const [annPriority, setAnnPriority] = useState("normal");
+  const [selectedSport, setSelectedSport] = useState(null);
+
+  const { data: memberships = [] } = useQuery({
+    queryKey: ["memberships"],
+    queryFn: () => {
+      if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
+      if (isAdmin) return api.entities.TeamMembership.list("-created_date", 500);
+      return api.entities.TeamMembership.filter({ user_email: user.email });
+    },
+  });
+
+  const { data: announcements = [] } = useQuery({
+    queryKey: ["team-announcements"],
+    queryFn: () => {
+      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_date", 20);
+      return api.entities.Announcement.list("-created_date", 50);
+    },
+  });
+
+  const createAnnouncement = useMutation({
+    mutationFn: (data) => api.entities.Announcement.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["team-announcements"] });
+      setAnnouncementOpen(false);
+      setAnnTitle(""); setAnnContent(""); setAnnPriority("normal");
+      toast.success("Announcement posted!");
+    },
+  });
+
+  const handlePostAnnouncement = () => {
+    if (!annTitle || !annContent) { toast.error("Please fill all fields"); return; }
+    createAnnouncement.mutate({
+      teacher_email: user.email,
+      teacher_name: user.full_name,
+      sport: user.sport_coached,
+      title: annTitle,
+      content: annContent,
+      priority: annPriority,
+    });
+  };
+
+  const mySports = isTeacher
+    ? [user.sport_coached]
+    : isAdmin
+      ? [...new Set(ALL_SPORTS)]
+      : [...new Set(memberships.map(m => m.sport))];
+
+  const activeSport = selectedSport || mySports[0] || "";
+  const sportMembers = memberships.filter(m => m.sport === activeSport);
+  const myAnnouncements = announcements.filter(a => mySports.includes(a.sport));
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">My Teams</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {isTeacher ? `Coaching ${user.sport_coached}` : `Member of ${mySports.length} team(s)`}
+          </p>
+        </div>
+        {isTeacher && (
+          <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
+            <DialogTrigger asChild>
+              <Button><Megaphone className="h-4 w-4 mr-2" />Post Announcement</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>New Team Announcement</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Title</Label><Input value={annTitle} onChange={e => setAnnTitle(e.target.value)} placeholder="Announcement title" /></div>
+                <div><Label>Content</Label><Textarea value={annContent} onChange={e => setAnnContent(e.target.value)} placeholder="Write your announcement..." rows={4} /></div>
+                <div><Label>Priority</Label>
+                  <Select value={annPriority} onValueChange={setAnnPriority}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="important">Important</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button className="w-full" onClick={handlePostAnnouncement} disabled={createAnnouncement.isPending}>
+                  {createAnnouncement.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Post Announcement
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {/* Sport selector tabs for multi-sport students/admin */}
+      {mySports.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {mySports.map(sport => (
+            <button
+              key={sport}
+              onClick={() => setSelectedSport(sport)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                activeSport === sport
+                  ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent`
+                  : "bg-card border-border text-muted-foreground hover:border-primary/30"
+              }`}
+            >
+              {SPORT_ICONS[sport]} {sport}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeSport && (
+        <Tabs defaultValue="members">
+          <TabsList>
+            <TabsTrigger value="members"><Users className="h-4 w-4 mr-1" />Members</TabsTrigger>
+            <TabsTrigger value="leaderboard"><Trophy className="h-4 w-4 mr-1" />Leaderboard</TabsTrigger>
+            <TabsTrigger value="announcements"><Megaphone className="h-4 w-4 mr-1" />Announcements</TabsTrigger>
+          </TabsList>
+
+          {/* Members tab */}
+          <TabsContent value="members" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-3">{sportMembers.length} member{sportMembers.length !== 1 ? "s" : ""}</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {sportMembers.map(m => (
+                <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                    {m.user_name?.[0] || "?"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{m.user_name}</p>
+                    <p className="text-xs text-muted-foreground">{m.user_email}</p>
+                  </div>
+                </div>
+              ))}
+              {sportMembers.length === 0 && (
+                <p className="text-sm text-muted-foreground py-4 col-span-2">No members in this team yet</p>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Leaderboard tab */}
+          <TabsContent value="leaderboard" className="mt-4">
+            <Leaderboard sport={activeSport} members={sportMembers} />
+          </TabsContent>
+
+          {/* Announcements tab */}
+          <TabsContent value="announcements" className="mt-4 space-y-3">
+            {myAnnouncements.filter(a => a.sport === activeSport).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No announcements for this team</p>
+            )}
+            {myAnnouncements.filter(a => a.sport === activeSport).map(ann => (
+              <Card key={ann.id} className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-medium">{ann.title}</h3>
+                    {ann.priority === "urgent" && <Badge variant="destructive" className="text-[10px]">Urgent</Badge>}
+                    {ann.priority === "important" && <Badge className="text-[10px] bg-chart-3 text-white">Important</Badge>}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{ann.content}</p>
+                  <p className="text-xs text-muted-foreground mt-2">By {ann.teacher_name} · {format(new Date(ann.created_date), "MMM d, yyyy")}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {mySports.length === 0 && (
+        <p className="text-center text-muted-foreground py-12">You haven't joined any teams. Visit your profile to join a team.</p>
+      )}
+    </div>
+  );
+}
