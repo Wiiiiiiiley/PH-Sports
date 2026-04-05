@@ -42,29 +42,42 @@ export default function ProfileSetup({ onComplete }) {
 
     setSaving(true);
 
-    if (role === "student") {
-      await api.auth.updateMe({ role, profile_complete: true, student_id: studentId, grade });
-      for (const sport of selectedSports) {
-        await api.entities.TeamMembership.create({
+    try {
+      if (role === "student") {
+        await api.auth.updateMe({ role, profile_complete: true, student_id: studentId, grade });
+        for (const sport of selectedSports) {
+          await api.entities.TeamMembership.create({
+            user_email: user.email,
+            user_name: user.full_name,
+            sport,
+          });
+        }
+        setSaving(false);
+        onComplete();
+      } else {
+        // Teacher: create a pending registration record, don't mark profile_complete
+        await api.auth.updateMe({ role, profile_complete: false, staff_id: staffId, sport_coached: sportCoached, teacher_status: "pending" });
+        await api.entities.TeacherRegistration.create({
           user_email: user.email,
           user_name: user.full_name,
-          sport,
+          staff_id: staffId,
+          sport_coached: sportCoached,
+          status: "pending",
         });
+        setSaving(false);
+        setTeacherPending(true);
       }
+    } catch (error) {
+      console.error('Profile setup failed:', error);
       setSaving(false);
-      onComplete();
-    } else {
-      // Teacher: create a pending registration record, don't mark profile_complete
-      await api.auth.updateMe({ role, profile_complete: false, staff_id: staffId, sport_coached: sportCoached, teacher_status: "pending" });
-      await api.entities.TeacherRegistration.create({
-        user_email: user.email,
-        user_name: user.full_name,
-        staff_id: staffId,
-        sport_coached: sportCoached,
-        status: "pending",
-      });
-      setSaving(false);
-      setTeacherPending(true);
+      const errorMsg = error.response?.data?.error || error.message || "Unknown error";
+      toast.error(`Setup failed: ${errorMsg}`);
+      
+      if (error.response?.status === 401) {
+        // Interceptor should handle this, but let's be safe
+        localStorage.removeItem('ph_sports_access_token');
+        setTimeout(() => window.location.href = '/login', 2000);
+      }
     }
   };
 

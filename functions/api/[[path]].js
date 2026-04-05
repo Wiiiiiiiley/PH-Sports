@@ -5,15 +5,18 @@ export async function onRequest(context) {
     const method = request.method;
 
     // Helper for JSON responses
-    const jsonResponse = (data, status = 200) => new Response(JSON.stringify(data), {
-        status,
-        headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
-    });
+    const jsonResponse = (data, status = 200) => {
+        const body = data === null ? null : JSON.stringify(data);
+        return new Response(body, {
+            status,
+            headers: { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+        });
+    };
 
     if (method === 'OPTIONS') {
         return jsonResponse(null);
@@ -69,21 +72,21 @@ export async function onRequest(context) {
 
         const getUserBySession = async () => {
             const token = getBearerToken();
-            if (!token) return null;
+            if (!token) return { error: 'No token provided' };
             const session = await env.DB.prepare('SELECT * FROM sessions WHERE token = ?').bind(token).first();
-            if (!session) return null;
+            if (!session) return { error: 'Session not found' };
             if (new Date(session.expires_at).getTime() <= Date.now()) {
                 await deleteSession(token);
-                return null;
+                return { error: 'Session expired' };
             }
             const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(session.user_id).first();
-            if (!user) return null;
+            if (!user) return { error: 'User not found' };
             return { token, user };
         };
 
         const requireAuth = async () => {
             const result = await getUserBySession();
-            if (!result) return { error: jsonResponse({ error: 'Authentication required' }, 401) };
+            if (result.error) return { error: jsonResponse({ error: result.error }, 401) };
             return { token: result.token, user: result.user };
         };
 

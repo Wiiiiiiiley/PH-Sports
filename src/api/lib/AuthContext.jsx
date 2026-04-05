@@ -29,14 +29,21 @@ export const AuthProvider = ({ children }) => {
       const currentUser = await api.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);
+      setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
       setIsAuthenticated(false);
       setUser(null);
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('ph_sports_access_token');
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
+        });
+      } else if (error.response && error.response.status === 403) {
+        setAuthError({
+          type: 'forbidden',
+          message: 'Access forbidden'
         });
       }
     } finally {
