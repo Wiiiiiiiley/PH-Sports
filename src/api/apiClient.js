@@ -11,7 +11,8 @@ const apiClient = axios.create({
 // Request interceptor for adding auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = appParams.token || localStorage.getItem('ph_sports_access_token');
+    // Always get the freshest token from localStorage
+    const token = localStorage.getItem('ph_sports_access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,12 +27,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Handle unauthorized access (e.g., redirect to login)
-      console.error('Unauthorized access - potential token expiration');
-      // Only clear token if it was 401 (unauthenticated)
-      if (error.response.status === 401) {
+    if (error.response) {
+      const { status } = error.response;
+      if (status === 401) {
+        console.error('Unauthorized: Session might have expired or been cleared.');
         localStorage.removeItem('ph_sports_access_token');
+      } else if (status === 403) {
+        console.error('Forbidden: You do not have permission for this action.');
       }
     }
     return Promise.reject(error);

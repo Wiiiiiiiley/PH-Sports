@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
-      const token = appParams.token || localStorage.getItem('ph_sports_access_token');
+      const token = localStorage.getItem('ph_sports_access_token');
       
       if (!token) {
         setIsAuthenticated(false);
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('ph_sports_access_token');
         setAuthError({
           type: 'auth_required',
-          message: 'Authentication required'
+          message: 'Session expired or invalid'
         });
       } else if (error.response && error.response.status === 403) {
         setAuthError({

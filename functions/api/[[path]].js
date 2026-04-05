@@ -6,7 +6,7 @@ export async function onRequest(context) {
 
     // Helper for JSON responses
     const jsonResponse = (data, status = 200) => {
-        const body = data === null ? null : JSON.stringify(data);
+        const body = data === null ? '' : JSON.stringify(data);
         return new Response(body, {
             status,
             headers: { 
@@ -72,21 +72,28 @@ export async function onRequest(context) {
 
         const getUserBySession = async () => {
             const token = getBearerToken();
-            if (!token) return { error: 'No token provided' };
+            if (!token) return { error: 'No authorization token found in request headers' };
+            
             const session = await env.DB.prepare('SELECT * FROM sessions WHERE token = ?').bind(token).first();
-            if (!session) return { error: 'Session not found' };
+            if (!session) return { error: `Session not found for token: ${token.slice(0, 8)}...` };
+            
             if (new Date(session.expires_at).getTime() <= Date.now()) {
                 await deleteSession(token);
-                return { error: 'Session expired' };
+                return { error: 'Session has expired' };
             }
+            
             const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(session.user_id).first();
-            if (!user) return { error: 'User not found' };
+            if (!user) return { error: 'User associated with this session no longer exists' };
+            
             return { token, user };
         };
 
         const requireAuth = async () => {
             const result = await getUserBySession();
-            if (result.error) return { error: jsonResponse({ error: result.error }, 401) };
+            if (result.error) {
+                console.error('Auth check failed:', result.error);
+                return { error: jsonResponse({ error: result.error }, 401) };
+            }
             return { token: result.token, user: result.user };
         };
 
