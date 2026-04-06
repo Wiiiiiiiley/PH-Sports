@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CheckCircle, XCircle, Users, BookOpen, CalendarDays, Megaphone, Loader2, Trash2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
@@ -304,7 +304,10 @@ export default function AdminDashboard() {
       {/* Reject dialog */}
       <Dialog open={!!rejectTarget} onOpenChange={() => setRejectTarget(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Reject Registration</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Reject Registration</DialogTitle>
+            <DialogDescription>Add a comment when rejecting this teacher registration.</DialogDescription>
+          </DialogHeader>
           <p className="text-sm text-muted-foreground">Rejecting <strong>{rejectTarget?.user_name}</strong>'s teacher registration.</p>
           <div className="space-y-2">
             <Input placeholder="Reason (optional)" value={rejectComment} onChange={e => setRejectComment(e.target.value)} />

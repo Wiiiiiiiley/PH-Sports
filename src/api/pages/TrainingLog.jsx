@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -92,6 +92,7 @@ export default function TrainingLog() {
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{SPORT_ICONS[activeSport]} Log {activeSport} Training</DialogTitle>
+                  <DialogDescription>Record a new training session for this sport.</DialogDescription>
                 </DialogHeader>
                 <TrainingLogForm sport={activeSport} onSubmit={d => createLog.mutate(d)} saving={createLog.isPending} />
               </DialogContent>

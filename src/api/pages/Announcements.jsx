@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Megaphone, Plus, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -122,6 +122,7 @@ export default function Announcements() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>发布新公告</DialogTitle>
+            <DialogDescription>发布一条新的公告到选择的运动项目。</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {/* Title */}

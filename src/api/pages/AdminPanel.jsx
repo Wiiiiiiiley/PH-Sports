@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/AuthContext';
@@ -144,6 +144,7 @@ const AdminPanel = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>修改管理员信息</DialogTitle>
+              <DialogDescription>修改管理员的姓名、邮箱或密码。</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="space-y-2">

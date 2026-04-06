@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -218,6 +218,7 @@ export default function VenueBooking() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Book Venue — {selectedDate && format(new Date(selectedDate + "T00:00"), "EEE, MMM d")} at {selectedTime}</DialogTitle>
+            <DialogDescription>Fill in the details to request a venue booking.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -275,7 +276,10 @@ export default function VenueBooking() {
       {/* Detail dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Booking Details</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+            <DialogDescription>View the details of this booking.</DialogDescription>
+          </DialogHeader>
           {selectedBooking && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
