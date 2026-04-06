@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
 import { api } from '@/api';
-import { ALL_SPORTS, SPORT_ICONS } from '@/lib/sports-config';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,8 +13,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'student', // Can be student or teacher, but not admin
-    sports: []
+    role: 'student' // Can be student or teacher, but not admin
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,17 +39,7 @@ const Register = () => {
       if (result?.token) {
         localStorage.setItem('ph_sports_access_token', result.token);
         
-        // If student, join teams
-        if (formData.role === 'student' && formData.sports.length > 0) {
-          await Promise.all(formData.sports.map(sport => 
-            api.entities.TeamMembership.create({ sport })
-          ));
-        }
-
-        // If teacher, apply for status (profile setup will handle this usually, but we can initiate here)
-        // Actually, the profile setup flow is better for this.
-      }
-
+      
       window.location.href = '/';
     } catch (err) {
       const message = err?.response?.data?.error || err?.message || '注册失败，请重试';
@@ -72,16 +59,7 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleRoleChange = (value) => {
-    setFormData({
-      ...formData,
-      role: value
+    setFormDatlue
     });
   };
 
@@ -149,28 +127,6 @@ const Register = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="请输入密码"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">确认密码</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="请再次输入密码"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
