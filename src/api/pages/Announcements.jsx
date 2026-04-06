@@ -174,7 +174,7 @@ export default function Announcements() {
             {/* Sport Selection */}
             <div>
               <Label className="mb-2 block">选择运动项目 *</Label>
-              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 border rounded-md bg-background">
+              <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-3 border rounded-md bg-background">
                 {availableSports.map(sport => (
                   <button
                     key={sport}
