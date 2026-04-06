@@ -572,16 +572,13 @@ export async function onRequest(context) {
                         console.log('Training logs - no sports coached, returning empty');
                         return jsonResponse([]); // Return empty if no sports coached
                     }
-                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
-                    console.log('Training logs - sport filter:', sportSql, sportBindings);
-                    const where = queryWhere || {};
-                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date']);
+                    
+                    // Simplified query: fetch all and filter in JavaScript
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
-                    const finalSql = `SELECT * FROM training_logs ${sql} ${sportSql} ${orderLimit}`.trim();
-                    console.log('Training logs - final SQL:', finalSql);
-                    console.log('Training logs - all bindings:', [...bindings, ...sportBindings]);
-                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
-                    return jsonResponse(results);
+                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs ${orderLimit}`).all();
+                    const filteredResults = results.filter(log => sports.includes(log.sport));
+                    console.log('Training logs - filtered results:', filteredResults.length);
+                    return jsonResponse(filteredResults);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport', 'date'],
@@ -645,16 +642,13 @@ export async function onRequest(context) {
                         console.log('Venue bookings - no sports coached, returning empty');
                         return jsonResponse([]); // Return empty if no sports coached
                     }
-                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
-                    console.log('Venue bookings - sport filter:', sportSql, sportBindings);
-                    const where = queryWhere || {};
-                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date', 'status']);
+                    
+                    // Simplified query: fetch all and filter in JavaScript
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
-                    const finalSql = `SELECT * FROM venue_bookings ${sql} ${sportSql} ${orderLimit}`.trim();
-                    console.log('Venue bookings - final SQL:', finalSql);
-                    console.log('Venue bookings - all bindings:', [...bindings, ...sportBindings]);
-                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
-                    return jsonResponse(results);
+                    const { results } = await env.DB.prepare(`SELECT * FROM venue_bookings ${orderLimit}`).all();
+                    const filteredResults = results.filter(booking => teacherSports.includes(booking.sport));
+                    console.log('Venue bookings - filtered results:', filteredResults.length);
+                    return jsonResponse(filteredResults);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'sport', 'date', 'status'],
