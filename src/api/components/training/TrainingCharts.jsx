@@ -5,6 +5,19 @@ import { format } from "date-fns";
 
 const COLORS = ["#3b82f6", "#22c55e", "#f97316", "#a855f7", "#ef4444", "#14b8a6"];
 
+// Helper function to parse training data
+const parseTrainingData = (data) => {
+  if (!data) return {};
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      return {};
+    }
+  }
+  return data;
+};
+
 function ChartWrapper({ title, children }) {
   return (
     <Card className="border-0 shadow-sm">
@@ -15,7 +28,10 @@ function ChartWrapper({ title, children }) {
 }
 
 function RowingCharts({ logs }) {
-  const data = logs.map(l => ({ date: format(new Date(l.date), "MM/dd"), distance: l.data?.distance || 0, split: l.data?.avg_split_time || 0 })).reverse();
+  const data = logs.map(l => {
+    const d = parseTrainingData(l.data);
+    return { date: format(new Date(l.date), "MM/dd"), distance: d.distance || 0, split: d.avg_split_time || 0 };
+  }).reverse();
   return (
     <div className="grid md:grid-cols-2 gap-4">
       <ChartWrapper title="Distance Trend (m)">
@@ -30,7 +46,7 @@ function RowingCharts({ logs }) {
 
 function BasketballCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return {
       date: format(new Date(l.date), "MM/dd"),
       fg: d.shot_attempts ? ((d.shots_made / d.shot_attempts) * 100).toFixed(1) : 0,
@@ -55,7 +71,7 @@ function BasketballCharts({ logs }) {
 
 function VolleyballCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return {
       date: format(new Date(l.date), "MM/dd"),
       serve: d.serve_attempts ? ((d.serves_successful / d.serve_attempts) * 100).toFixed(1) : 0,
@@ -72,7 +88,7 @@ function VolleyballCharts({ logs }) {
 
 function FootballCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return {
       date: format(new Date(l.date), "MM/dd"),
       distance: d.distance_ran || 0,
@@ -93,7 +109,7 @@ function FootballCharts({ logs }) {
 
 function TennisCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return { date: format(new Date(l.date), "MM/dd"), accuracy: d.serve_attempts ? (((d.serve_attempts - d.double_faults) / d.serve_attempts) * 100).toFixed(1) : 0, aces: d.aces || 0 };
   }).reverse();
   const sessionTypes = {};
@@ -113,7 +129,7 @@ function TennisCharts({ logs }) {
 
 function TableTennisCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return { date: format(new Date(l.date), "MM/dd"), rallies: d.rally_sets || 0, serve: d.serve_practice || 0, spin: d.spin_drill_sets || 0, footwork: d.footwork_drills || 0 };
   }).reverse();
   return (
@@ -124,7 +140,10 @@ function TableTennisCharts({ logs }) {
 }
 
 function BadmintonCharts({ logs }) {
-  const data = logs.map(l => ({ date: format(new Date(l.date), "MM/dd"), accuracy: l.data?.smash_accuracy || 0 })).reverse();
+  const data = logs.map(l => {
+    const d = parseTrainingData(l.data);
+    return { date: format(new Date(l.date), "MM/dd"), accuracy: d.smash_accuracy || 0 };
+  }).reverse();
   return (
     <ChartWrapper title="Smash Accuracy Trend (%)">
       <ResponsiveContainer><LineChart data={data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="accuracy" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} /></LineChart></ResponsiveContainer>
@@ -134,7 +153,7 @@ function BadmintonCharts({ logs }) {
 
 function UltimateFrisbeeCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return { date: format(new Date(l.date), "MM/dd"), completion: d.throw_attempts ? ((d.throws_completed / d.throw_attempts) * 100).toFixed(1) : 0 };
   }).reverse();
   return (
@@ -146,7 +165,7 @@ function UltimateFrisbeeCharts({ logs }) {
 
 function BilliardsCharts({ logs }) {
   const data = logs.map(l => {
-    const d = l.data || {};
+    const d = parseTrainingData(l.data);
     return {
       date: format(new Date(l.date), "MM/dd"),
       winRate: d.frames_played ? ((d.frames_won / d.frames_played) * 100).toFixed(1) : 0,

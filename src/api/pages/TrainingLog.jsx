@@ -125,7 +125,7 @@ export default function TrainingLog() {
                       </p>
                       {log.data && (
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                          {Object.entries(log.data).filter(([, v]) => v).map(([k, v]) => (
+                          {Object.entries(typeof log.data === 'string' ? JSON.parse(log.data) : log.data).filter(([, v]) => v).map(([k, v]) => (
                             <span key={k} className="text-xs text-muted-foreground">
                               <span className="font-medium text-foreground">{v}</span> {k.replace(/_/g, " ")}
                             </span>
