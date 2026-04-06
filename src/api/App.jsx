@@ -15,6 +15,7 @@ import VenueBooking from '@/pages/VenueBooking';
 import ManageRequests from '@/pages/ManageRequests';
 import StudentProfile from '@/pages/StudentProfile';
 import TeacherProfile from '@/pages/TeacherProfile';
+import AdminProfile from '@/pages/AdminProfile';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminPanel from '@/pages/AdminPanel';
 import Announcements from '@/pages/Announcements';
@@ -121,7 +122,8 @@ const AuthenticatedApp = () => {
           </RoleRoute>
         } />
         <Route path="/profile" element={
-          user?.role === 'teacher' ? <TeacherProfile /> : <StudentProfile />
+          user?.role === 'teacher' ? <TeacherProfile /> : 
+          user?.role === 'admin' ? <AdminProfile /> : <StudentProfile />
         } />
         <Route path="/admin" element={
           <RoleRoute allowedRoles={['admin']}>
