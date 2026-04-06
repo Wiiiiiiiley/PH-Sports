@@ -3,23 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/lib/AuthContext';
 import { api } from '@/api';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Trash2, UserPlus, Shield, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Edit, AlertTriangle, Loader2, Save, X } from 'lucide-react';
 
 const AdminPanel = () => {
-  const { user: currentUser } = useAuth();
-  const [admins, setAdmins] = useState([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({
+  const { user: currentUser, checkUserAuth } = useAuth();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
     email: '',
-    name: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,84 +28,69 @@ const AdminPanel = () => {
   const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
-    if (isAdmin) {
-      loadAdmins();
+    if (isAdmin && currentUser) {
+      setEditForm({
+        full_name: currentUser.full_name || '',
+        email: currentUser.email || '',
+        password: '',
+        confirmPassword: ''
+      });
     }
-  }, [isAdmin]);
+  }, [isAdmin, currentUser]);
 
-  const loadAdmins = async () => {
-    try {
-      setLoading(true);
-      const allUsers = await api.entities.User.filter({ role: 'admin' });
-      setAdmins(allUsers);
-    } catch (err) {
-      setError('加载管理员列表失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateAdmin = async (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // Check if admin already exists
-      const existingAdmin = admins.find(admin => admin.email === newAdmin.email);
-      if (existingAdmin) {
-        setError('该邮箱已经是管理员');
+      // Validate form
+      if (!editForm.full_name.trim()) {
+        setError('请输入姓名');
+        setLoading(false);
+        return;
+      }
+      if (!editForm.email.trim()) {
+        setError('请输入邮箱');
+        setLoading(false);
+        return;
+      }
+      if (editForm.password && editForm.password !== editForm.confirmPassword) {
+        setError('两次输入的密码不一致');
         setLoading(false);
         return;
       }
 
-      // Create admin account
-      // In our current backend, we might need a specific endpoint or just use register
-      // For now, let's use the register endpoint but we'll need to update the role afterwards
-      // or the backend should allow admins to create users.
-      
-      // Let's assume the admin can update roles
-      const result = await api.auth.register({
-        email: newAdmin.email,
-        password: newAdmin.password,
-        full_name: newAdmin.name,
-      });
+      // Prepare update data
+      const updates = {
+        full_name: editForm.full_name.trim(),
+        email: editForm.email.trim()
+      };
 
-      if (result?.user?.id) {
-        await api.entities.User.update(result.user.id, { role: 'admin' });
+      // Only include password if it's provided
+      if (editForm.password) {
+        updates.password = editForm.password;
       }
 
-      setSuccess('管理员创建成功！');
-      loadAdmins();
-      setNewAdmin({ email: '', name: '', password: '' });
-      setIsCreateDialogOpen(false);
+      // Update admin profile
+      await api.auth.updateMe(updates);
+
+      // Refresh user data
+      await checkUserAuth();
+
+      setSuccess('管理员信息更新成功！');
+      setIsEditDialogOpen(false);
+
+      // Clear password fields
+      setEditForm(prev => ({
+        ...prev,
+        password: '',
+        confirmPassword: ''
+      }));
+
     } catch (err) {
-      setError(err?.response?.data?.error || '创建管理员失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteAdmin = async (adminId) => {
-    const adminToDelete = admins.find(admin => admin.id === adminId);
-    if (adminToDelete?.email === 'admin@sportsync.edu') {
-      setError('不能删除系统主管理员');
-      return;
-    }
-
-    if (!window.confirm(`确定要移除管理员 ${adminToDelete?.full_name} 吗？此操作将把其角色降级为学生。`)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      // Instead of deleting, we downgrade the role
-      await api.entities.User.update(adminId, { role: 'student' });
-      setSuccess('管理员移除成功！');
-      loadAdmins();
-    } catch (err) {
-      setError('操作失败');
+      setError(err?.response?.data?.error || '更新失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -132,62 +116,83 @@ const AdminPanel = () => {
           <Shield className="h-8 w-8 mr-2" />
           管理员管理
         </h1>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              创建管理员
+              <Edit className="h-4 w-4 mr-2" />
+              修改信息
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>创建新管理员</DialogTitle>
+              <DialogTitle>修改管理员信息</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">管理员姓名 *</Label>
+                <Input
+                  id="full_name"
+                  type="text"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="输入管理员姓名"
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">管理员邮箱 *</Label>
                 <Input
                   id="email"
                   type="email"
-                  value={newAdmin.email}
-                  onChange={(e) => setNewAdmin(prev => ({ ...prev, email: e.target.value }))}
+                  value={editForm.email}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="输入管理员邮箱"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="name">管理员姓名 *</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={newAdmin.name}
-                  onChange={(e) => setNewAdmin(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="输入管理员姓名"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">初始密码 *</Label>
+                <Label htmlFor="password">新密码（可选）</Label>
                 <Input
                   id="password"
                   type="password"
-                  value={newAdmin.password}
-                  onChange={(e) => setNewAdmin(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="输入初始密码"
-                  required
+                  value={editForm.password}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="留空则不修改密码"
                 />
               </div>
-              
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">确认新密码</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={editForm.confirmPassword}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="再次输入新密码"
+                />
+              </div>
+
               {error && <p className="text-sm text-red-500">{error}</p>}
               {success && <p className="text-sm text-green-500">{success}</p>}
-              
+
               <div className="flex space-x-2">
                 <Button type="submit" disabled={loading} className="flex-1">
-                  {loading ? '创建中...' : '创建管理员'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      更新中...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      保存修改
+                    </>
+                  )}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="flex-1">
+                  <X className="h-4 w-4 mr-2" />
                   取消
                 </Button>
               </div>
@@ -196,54 +201,35 @@ const AdminPanel = () => {
         </Dialog>
       </div>
 
-      {/* Admins List */}
+      {/* Admin Info Card */}
       <Card>
         <CardHeader>
-          <CardTitle>管理员列表</CardTitle>
+          <CardTitle>当前管理员信息</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>姓名</TableHead>
-                <TableHead>邮箱</TableHead>
-                <TableHead>创建时间</TableHead>
-                <TableHead>创建者</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {admins.map((admin) => (
-                <TableRow key={admin.id}>
-                  <TableCell className="font-medium">{admin.full_name}</TableCell>
-                  <TableCell>{admin.email}</TableCell>
-                  <TableCell>
-                    {admin.created_at ? format(new Date(admin.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN }) : '—'}
-                  </TableCell>
-                  <TableCell>系统</TableCell>
-                  <TableCell>
-                    {admin.email !== 'admin@sportsync.edu' && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteAdmin(admin.id)}
-                        disabled={loading}
-                      >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {admins.length === 0 && !loading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                    暂无管理员
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">姓名</Label>
+              <p className="text-lg font-medium">{currentUser?.full_name || '未设置'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">邮箱</Label>
+              <p className="text-lg font-medium">{currentUser?.email || '未设置'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">角色</Label>
+              <p className="text-lg font-medium">管理员</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-muted-foreground">创建时间</Label>
+              <p className="text-lg font-medium">
+                {currentUser?.created_at
+                  ? format(new Date(currentUser.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })
+                  : '未知'
+                }
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -253,11 +239,11 @@ const AdminPanel = () => {
           <CardTitle>使用说明</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• 只有管理员可以访问此页面</p>
-          <p>• 创建的管理员账号可以直接登录，无需注册</p>
-          <p>• 普通用户无法通过注册成为管理员</p>
-          <p>• 系统管理员无法删除</p>
-          <p>• 请妥善保管管理员密码</p>
+          <p>• 系统只允许一个管理员账号</p>
+          <p>• 管理员可以修改自己的姓名、邮箱和密码</p>
+          <p>• 密码字段留空表示不修改密码</p>
+          <p>• 修改邮箱后需要使用新邮箱登录</p>
+          <p>• 请妥善保管管理员账号信息</p>
         </CardContent>
       </Card>
     </div>

@@ -395,6 +395,10 @@ export async function onRequest(context) {
             }
             if (method === 'PATCH' && id) {
                 const body = await readJsonBody();
+                // Prevent setting role to admin
+                if (body && body.role === 'admin') {
+                    return jsonResponse({ error: 'Cannot set role to admin' }, 403);
+                }
                 return updateEntity(body, ['full_name', 'role', 'sport_coached', 'staff_id', 'student_id', 'grade', 'profile_complete', 'teacher_status'], null, null);
             }
             return jsonResponse({ error: 'Method not allowed' }, 405);
