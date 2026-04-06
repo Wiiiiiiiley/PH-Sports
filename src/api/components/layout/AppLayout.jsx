@@ -24,6 +24,7 @@ const teacherNav = [
   { label: "Manage Requests", path: "/requests", icon: CheckSquare },
   { label: "Announcements", path: "/announcements", icon: Megaphone },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },
+  { label: "My Profile", path: "/profile", icon: UserCircle },
 ];
 
 const adminNav = [
@@ -34,6 +35,7 @@ const adminNav = [
   { label: "Training Logs", path: "/training", icon: ClipboardList },
   { label: "Announcements", path: "/announcements", icon: Megaphone },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },
+  { label: "My Profile", path: "/profile", icon: UserCircle },
 ];
 
 export default function AppLayout() {
