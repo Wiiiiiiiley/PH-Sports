@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, XCircle, Clock, MapPin, User, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -199,6 +199,7 @@ export default function ManageRequests() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{actionType === "approve" ? "Approve" : "Reject"} {actionBooking?.type === 'teacher' ? 'Teacher Registration' : 'Booking'}</DialogTitle>
+            <DialogDescription>Confirm your decision for this request.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
