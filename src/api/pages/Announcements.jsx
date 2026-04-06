@@ -69,7 +69,7 @@ export default function Announcements() {
   });
 
   // Get available sports for current user
-  const availableSports = isAdmin ? ALL_SPORTS : [user?.sport_coached].filter(Boolean);
+  const availableSports = isAdmin ? ALL_SPORTS : (Array.isArray(user?.sport_coached) ? user.sport_coached : [user?.sport_coached]).filter(Boolean);
 
   const handleCreateClick = () => {
     if (!formData.title.trim()) {
