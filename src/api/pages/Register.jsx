@@ -13,7 +13,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'student' // Can be student or teacher, but not admin
+    role: 'student'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,8 +38,8 @@ const Register = () => {
 
       if (result?.token) {
         localStorage.setItem('ph_sports_access_token', result.token);
-        
-      
+      }
+
       window.location.href = '/';
     } catch (err) {
       const message = err?.response?.data?.error || err?.message || '注册失败，请重试';
@@ -49,17 +49,17 @@ const Register = () => {
     }
   };
 
-  const handleSportToggle = (sport) => {
-    setFormData(prev => ({
-      ...prev,
-      sports: prev.sports.includes(sport)
-        ? prev.sports.filter(s => s !== sport)
-        : [...prev.sports, sport]
-    }));
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
-  const handleChange = (e) => {
-    setFormDatlue
+  const handleRoleChange = (value) => {
+    setFormData({
+      ...formData,
+      role: value
     });
   };
 
@@ -107,26 +107,25 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            {/* Sports Selection for Students */}
-            {formData.role === 'student' && (
-              <div className="space-y-3">
-                <Label>选择运动队 (可多选)</Label>
-                <div className="grid grid-cols-2 gap-3 max-h-40 overflow-y-auto">
-                  {ALL_SPORTS.map(sport => (
-                    <div key={sport} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={sport}
-                        checked={formData.sports.includes(sport)}
-                        onCheckedChange={() => handleSportToggle(sport)}
-                      />
-                      <Label htmlFor={sport} className="text-sm flex items-center">
-                        <span className="mr-1">{SPORT_ICONS[sport]}</span>
-                        {sport}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">密码</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="请输入密码"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">确认密码</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="请再次输入密码"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
