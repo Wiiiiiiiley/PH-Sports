@@ -23,6 +23,11 @@ const RoleRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/" replace />;
   }
 
+  // Additional check for teachers: must be approved to access teacher routes
+  if (user.role === 'teacher' && user.teacher_status !== 'approved') {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 };
 
