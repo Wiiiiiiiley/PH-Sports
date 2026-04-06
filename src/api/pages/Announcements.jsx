@@ -69,16 +69,6 @@ export default function Announcements() {
     },
   });
 
-  // Get available sports for current user
-  const availableSports = isAdmin ? ALL_SPORTS : (() => {
-    const sports = Array.isArray(user?.sport_coached) 
-      ? user.sport_coached 
-      : user?.sport_coached ? [user.sport_coached] : [];
-    console.log('Announcements page - user.sport_coached:', user?.sport_coached);
-    console.log('Announcements page - parsed sports:', sports);
-    return sports.filter(Boolean);
-  })();
-
   const handleCreateClick = () => {
     if (!formData.title.trim()) {
       toast.error("请输入标题");
@@ -147,42 +137,12 @@ export default function Announcements() {
             <DialogDescription>发布一条新的公告到选择的运动项目。</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Title */}
+            <div><Label>标题</Label><Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="公告标题" /></div>
+            <div><Label>内容</Label><Textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} placeholder="写公告内容..." rows={4} /></div>
             <div>
-              <Label htmlFor="title">标题 *</Label>
-              <Input
-                id="title"
-                placeholder="输入公告标题"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                maxLength={100}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.title.length}/100
-              </p>
-            </div>
-
-            {/* Content */}
-            <div>
-              <Label htmlFor="content">内容 *</Label>
-              <Textarea
-                id="content"
-                placeholder="输入公告内容..."
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={5}
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.content.length}/500
-              </p>
-            </div>
-
-            {/* Sport Selection */}
-            <div>
-              <Label className="mb-2 block">选择运动项目 *</Label>
-              <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto p-3 border rounded-md bg-background">
-                {availableSports.map(sport => (
+              <Label className="mb-2 block">选择运动项目</Label>
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 border rounded-md bg-background">
+                {ALL_SPORTS.map(sport => (
                   <button
                     key={sport}
                     type="button"
@@ -207,40 +167,20 @@ export default function Announcements() {
                 <p className="text-xs text-muted-foreground mt-2">已选择: {selectedSports.join(", ")}</p>
               )}
             </div>
-
-            {/* Priority */}
-            <div>
-              <Label htmlFor="priority">优先级</Label>
+            <div><Label>优先级</Label>
               <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="normal">普通</SelectItem>
+                  <SelectItem value="important">重要</SelectItem>
                   <SelectItem value="urgent">紧急</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Buttons */}
-            <div className="flex gap-3 justify-end pt-4">
-              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                取消
-              </Button>
-              <Button
-                onClick={handleCreateClick}
-                disabled={createAnnouncement.isPending || selectedSports.length === 0}
-              >
-                {createAnnouncement.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    发布中...
-                  </>
-                ) : (
-                  `发布到 ${selectedSports.length || 0} 个项目`
-                )}
-              </Button>
-            </div>
+            <Button className="w-full" onClick={handleCreateClick} disabled={createAnnouncement.isPending || selectedSports.length === 0}>
+              {createAnnouncement.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              发布到 {selectedSports.length || 0} 个项目
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
