@@ -149,7 +149,7 @@ export default function Teams() {
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm border transition-all ${
                           annSports.includes(sport)
                             ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent shadow-sm`
-                            : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:bg-accent"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-primary/50 hover:bg-gray-50"
                         }`}
                       >
                         {SPORT_ICONS[sport]} {sport}
