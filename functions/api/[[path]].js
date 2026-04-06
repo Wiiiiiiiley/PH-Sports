@@ -289,6 +289,11 @@ export async function onRequest(context) {
                     }
                 }
 
+                // Handle sport_coached array serialization
+                if (updates.sport_coached && Array.isArray(updates.sport_coached)) {
+                    updates.sport_coached = JSON.stringify(updates.sport_coached);
+                }
+
                 const keys = Object.keys(updates);
                 if (keys.length === 0) {
                     return jsonResponse(sanitizeUser(auth.user));
@@ -296,7 +301,7 @@ export async function onRequest(context) {
                 const setSql = keys.map(k => `${k} = ?`).join(', ');
                 const values = keys.map(k => updates[k]);
                 await env.DB.prepare(`UPDATE users SET ${setSql}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).bind(...values, auth.user.id).run();
-                const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(auth.user.id).first();
+                const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?`).bind(auth.user.id).first();
                 return jsonResponse(sanitizeUser(user));
             }
 
