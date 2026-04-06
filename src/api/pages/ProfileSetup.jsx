@@ -13,7 +13,6 @@ import { toast } from "sonner";
 
 export default function ProfileSetup({ onComplete }) {
   const { user } = useAuth();
-  const [role, setRole] = useState("");
   const [studentId, setStudentId] = useState("");
   const [staffId, setStaffId] = useState("");
   const [grade, setGrade] = useState("");
@@ -21,6 +20,9 @@ export default function ProfileSetup({ onComplete }) {
   const [selectedSports, setSelectedSports] = useState([]);
   const [saving, setSaving] = useState(false);
   const [teacherPending, setTeacherPending] = useState(false);
+
+  // Use role from user object (set during registration)
+  const role = user?.role || "";
 
   const toggleSport = (sport) => {
     setSelectedSports(prev =>
@@ -115,14 +117,7 @@ export default function ProfileSetup({ onComplete }) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label>I am a...</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger><SelectValue placeholder="Select your role" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher / Coach</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Role: {role === "student" ? "Student" : "Teacher / Coach"}</Label>
             </div>
 
             {role === "student" && (
