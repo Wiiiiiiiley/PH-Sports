@@ -30,36 +30,54 @@ export default function Dashboard() {
   const { user } = useAuth();
   const isTeacher = user?.role === "teacher";
   const isAdmin = user?.role === "admin";
+  const isStudent = !isTeacher && !isAdmin;
 
+  // Students see their own memberships, teachers see all memberships for their sport, admins see all
   const { data: memberships = [] } = useQuery({
-    queryKey: ["memberships", user?.email],
-    queryFn: () => isTeacher
-      ? api.entities.TeamMembership.filter({ sport: user.sport_coached })
-      : api.entities.TeamMembership.filter({ user_email: user.email }),
+    queryKey: ["memberships", user?.email, user?.sport_coached],
+    queryFn: () => {
+      if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
+      if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
+      return api.entities.TeamMembership.filter({ user_email: user.email });
+    },
   });
 
+  // Training logs - teachers see their sport's logs, students see their own, admins see all
   const { data: logs = [] } = useQuery({
-    queryKey: ["logs-dash", user?.email],
-    queryFn: () => isTeacher
-      ? api.entities.TrainingLog.filter({ sport: user.sport_coached }, "-date", 10)
-      : api.entities.TrainingLog.filter({ user_email: user.email }, "-date", 5),
+    queryKey: ["logs-dash", user?.email, user?.sport_coached],
+    queryFn: () => {
+      if (isAdmin) return api.entities.TrainingLog.list("-date", 10);
+      if (isTeacher) return api.entities.TrainingLog.filter({ sport: user.sport_coached }, "-date", 10);
+      return api.entities.TrainingLog.filter({ user_email: user.email }, "-date", 5);
+    },
   });
 
+  // Bookings - students see all, teachers see their sport's bookings, admins see all
   const { data: bookings = [] } = useQuery({
-    queryKey: ["bookings-dash"],
-    queryFn: () => api.entities.VenueBooking.list("-date", 10),
+    queryKey: ["bookings-dash", user?.sport_coached],
+    queryFn: () => {
+      if (isAdmin) return api.entities.VenueBooking.list("-date", 20);
+      if (isTeacher) return api.entities.VenueBooking.filter({ sport: user.sport_coached }, "-date", 20);
+      return api.entities.VenueBooking.list("-date", 10);
+    },
   });
 
+  // Announcements - all users see relevant announcements
   const { data: announcements = [] } = useQuery({
     queryKey: ["announcements-dash", user?.email],
     queryFn: () => {
-      if (isTeacher) return api.entities.Announcement.filter({ teacher_email: user.email }, "-created_at", 5);
+      if (isAdmin) return api.entities.Announcement.list("-created_at", 50);
+      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_at", 20);
       return api.entities.Announcement.list("-created_at", 100);
     },
   });
 
+  // Pending bookings that need teacher/admin attention
+  const pendingBookings = bookings.filter(b => b.status === "pending");
   const upcomingBookings = bookings.filter(b => b.status === "approved" && new Date(b.date) >= new Date());
-  const myTeamsSports = isTeacher ? [user.sport_coached] : memberships.map(m => m.sport);
+  
+  // For students: their teams, for teachers: their sport, for admins: all sports
+  const myTeamsSports = isTeacher ? [user.sport_coached] : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
   const relevantAnnouncements = announcements.filter(a => myTeamsSports.includes(a.sport));
 
   return (
@@ -74,9 +92,21 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={Trophy} label="My Teams" value={isTeacher ? memberships.length + " athletes" : myTeamsSports.length} color="bg-primary" />
+        {isStudent && (
+          <StatCard icon={Trophy} label="My Teams" value={myTeamsSports.length} color="bg-primary" />
+        )}
+        {isTeacher && (
+          <StatCard icon={Trophy} label="My Athletes" value={memberships.length} color="bg-primary" />
+        )}
+        {isAdmin && (
+          <StatCard icon={Trophy} label="Total Athletes" value={memberships.length} color="bg-primary" />
+        )}
         <StatCard icon={ClipboardList} label="Training Logs" value={logs.length} color="bg-accent" />
-        <StatCard icon={CalendarDays} label="Upcoming Bookings" value={upcomingBookings.length} color="bg-chart-3" />
+        {isTeacher ? (
+          <StatCard icon={CalendarDays} label="Pending Approvals" value={pendingBookings.length} color="bg-chart-3" />
+        ) : (
+          <StatCard icon={CalendarDays} label="Upcoming Bookings" value={upcomingBookings.length} color="bg-chart-3" />
+        )}
         <StatCard icon={Bell} label="Announcements" value={relevantAnnouncements.length} color="bg-chart-4" />
       </div>
 
@@ -85,7 +115,7 @@ export default function Dashboard() {
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Recent Training Logs</CardTitle>
+              <CardTitle className="text-base">{isTeacher ? "Athletes' Training Logs" : "Recent Training Logs"}</CardTitle>
               <Link to="/training" className="text-xs text-primary font-medium hover:underline">View all</Link>
             </div>
           </CardHeader>
@@ -96,7 +126,7 @@ export default function Dashboard() {
                 <span className="text-xl">{SPORT_ICONS[log.sport]}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {isTeacher ? log.user_name : log.sport} — {log.session_type}
+                    {(isTeacher || isAdmin) ? `${log.user_name} — ${log.session_type}` : `${log.sport} — ${log.session_type}`}
                   </p>
                   <p className="text-xs text-muted-foreground">{format(new Date(log.date), "MMM d, yyyy")} · {log.duration} min</p>
                 </div>

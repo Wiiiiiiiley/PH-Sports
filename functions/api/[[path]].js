@@ -173,6 +173,7 @@ export async function onRequest(context) {
             }
             const email = String(body.email).trim().toLowerCase();
             const fullName = body.full_name ? String(body.full_name).trim() : null;
+            const requestedRole = body.role === 'teacher' ? 'teacher' : 'student';
 
             if (email === ADMIN_EMAIL) {
                 return jsonResponse({ error: 'Admin account cannot be registered' }, 403);
@@ -185,9 +186,20 @@ export async function onRequest(context) {
 
             const { salt, hash } = await createPasswordHash(String(body.password));
             const id = crypto.randomUUID();
-            await env.DB.prepare(
-                'INSERT INTO users (id, email, full_name, password_hash, password_salt, role, profile_complete, teacher_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-            ).bind(id, email, fullName, hash, salt, 'student', 0, 'approved').run();
+
+            if (requestedRole === 'teacher') {
+                await env.DB.prepare(
+                    'INSERT INTO users (id, email, full_name, password_hash, password_salt, role, profile_complete, teacher_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(id, email, fullName, hash, salt, 'teacher', 0, 'pending').run();
+
+                await env.DB.prepare(
+                    'INSERT INTO teacher_registrations (id, user_email, user_name, staff_id, sport_coached, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(crypto.randomUUID(), email, fullName, null, null, 'pending', new Date().toISOString()).run();
+            } else {
+                await env.DB.prepare(
+                    'INSERT INTO users (id, email, full_name, password_hash, password_salt, role, profile_complete, teacher_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(id, email, fullName, hash, salt, 'student', 0, 'approved').run();
+            }
 
             const { token } = await createSession(id);
             const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();

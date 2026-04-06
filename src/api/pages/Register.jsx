@@ -34,6 +34,7 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
         full_name: formData.name,
+        role: formData.role,
       });
 
       if (result?.token) {
