@@ -567,14 +567,19 @@ export async function onRequest(context) {
                 }
                 if (isTeacher) {
                     const sports = parseJsonArray(currentUser.sport_coached);
+                    console.log('Training logs - teacher sports:', sports);
                     if (sports.length === 0) {
+                        console.log('Training logs - no sports coached, returning empty');
                         return jsonResponse([]); // Return empty if no sports coached
                     }
                     const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
+                    console.log('Training logs - sport filter:', sportSql, sportBindings);
                     const where = queryWhere || {};
                     const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date']);
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
                     const finalSql = `SELECT * FROM training_logs ${sql} ${sportSql} ${orderLimit}`.trim();
+                    console.log('Training logs - final SQL:', finalSql);
+                    console.log('Training logs - all bindings:', [...bindings, ...sportBindings]);
                     const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
                     return jsonResponse(results);
                 }
@@ -635,14 +640,19 @@ export async function onRequest(context) {
                 }
                 if (isTeacher) {
                     const teacherSports = parseJsonArray(currentUser.sport_coached);
+                    console.log('Venue bookings - teacher sports:', teacherSports);
                     if (teacherSports.length === 0) {
+                        console.log('Venue bookings - no sports coached, returning empty');
                         return jsonResponse([]); // Return empty if no sports coached
                     }
                     const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
+                    console.log('Venue bookings - sport filter:', sportSql, sportBindings);
                     const where = queryWhere || {};
                     const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date', 'status']);
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
                     const finalSql = `SELECT * FROM venue_bookings ${sql} ${sportSql} ${orderLimit}`.trim();
+                    console.log('Venue bookings - final SQL:', finalSql);
+                    console.log('Venue bookings - all bindings:', [...bindings, ...sportBindings]);
                     const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
                     return jsonResponse(results);
                 }
