@@ -562,6 +562,10 @@ export async function onRequest(context) {
                     });
                 }
                 if (isTeacher) {
+                    const sports = parseJsonArray(currentUser.sport_coached);
+                    if (sports.length === 0) {
+                        return jsonResponse([]); // Return empty if no sports coached
+                    }
                     const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
                     const where = queryWhere || {};
                     const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date']);
@@ -624,6 +628,9 @@ export async function onRequest(context) {
                 }
                 if (isTeacher) {
                     const teacherSports = parseJsonArray(currentUser.sport_coached);
+                    if (teacherSports.length === 0) {
+                        return jsonResponse([]); // Return empty if no sports coached
+                    }
                     const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
                     const where = queryWhere || {};
                     const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date', 'status']);
@@ -704,6 +711,10 @@ export async function onRequest(context) {
                     });
                 }
                 if (isTeacher) {
+                    const sports = parseJsonArray(currentUser.sport_coached);
+                    if (sports.length === 0) {
+                        return jsonResponse([]); // Return empty if no sports coached
+                    }
                     const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
                     const where = queryWhere || {};
                     const { sql, bindings } = buildWhereClause(where, ['id', 'sport']);
