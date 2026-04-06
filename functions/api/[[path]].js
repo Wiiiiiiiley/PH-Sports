@@ -677,7 +677,6 @@ export async function onRequest(context) {
                 if (!body || !body.title || !body.content || !body.sport) {
                     return jsonResponse({ error: 'title, content, sport required' }, 400);
                 }
-                if (!isAdmin && body.sport !== currentUser.sport_coached) return jsonResponse({ error: 'Forbidden' }, 403);
                 return createEntity(body, ['id', 'teacher_email', 'teacher_name', 'sport', 'title', 'content', 'priority', 'created_at'], {
                     teacher_email: currentUser.email,
                     teacher_name: currentUser.full_name,
