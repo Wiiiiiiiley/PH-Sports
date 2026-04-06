@@ -366,14 +366,48 @@ export async function onRequest(context) {
             return jsonResponse(created || { id: idToUse });
         };
 
+        const parseJsonArray = (value) => {
+            if (!value) return [];
+            if (typeof value === 'string') {
+                try {
+                    return JSON.parse(value);
+                } catch {
+                    return value.split(',').map(s => s.trim()).filter(Boolean);
+                }
+            }
+            if (Array.isArray(value)) return value;
+            return [];
+        };
+
+        const buildSportFilter = (sportField, sportValue) => {
+            const sports = parseJsonArray(sportValue);
+            if (sports.length === 0) return { sql: '', bindings: [] };
+            if (sports.length === 1) {
+                return { sql: `AND ${sportField} = ?`, bindings: [sports[0]] };
+            }
+            const placeholders = sports.map(() => '?').join(', ');
+            return { sql: `AND ${sportField} IN (${placeholders})`, bindings: sports };
+        };
+
         const updateEntity = async (data, allowedUpdateColumns, forcedWhere, forcedUpdate) => {
             if (!id) return jsonResponse({ error: 'Not found' }, 404);
             if (!data || typeof data !== 'object') return jsonResponse({ error: 'Invalid body' }, 400);
             const updates = { ...(data || {}), ...(forcedUpdate || {}) };
             const keys = Object.keys(updates).filter(k => allowedUpdateColumns.includes(k));
             if (keys.length === 0) return jsonResponse({ error: 'No updatable fields' }, 400);
-            const setSql = keys.map(k => `${k} = ?`).join(', ');
-            const values = keys.map(k => updates[k]);
+            const setSql = keys.map(k => {
+                // JSON stringify arrays for sport_coached
+                if ((k === 'sport_coached') && Array.isArray(updates[k])) {
+                    return `${k} = ?`;
+                }
+                return `${k} = ?`;
+            }).join(', ');
+            const values = keys.map(k => {
+                if ((k === 'sport_coached') && Array.isArray(updates[k])) {
+                    return JSON.stringify(updates[k]);
+                }
+                return updates[k];
+            });
             const where = { id, ...(forcedWhere || {}) };
             const whereKeys = Object.keys(where);
             const whereSql = whereKeys.map(k => `${k} = ?`).join(' AND ');
@@ -430,7 +464,17 @@ export async function onRequest(context) {
             if (method === 'POST') {
                 if (isAdmin) return jsonResponse({ error: 'Admins do not apply for teacher role' }, 403);
                 const body = await readJsonBody();
-                const sportCoached = body && body.sport_coached ? String(body.sport_coached) : currentUser.sport_coached;
+                // Handle both array and string formats for sport_coached
+                let sportCoached = body && body.sport_coached ? body.sport_coached : currentUser.sport_coached;
+                if (Array.isArray(sportCoached)) {
+                    sportCoached = JSON.stringify(sportCoached);
+                } else if (typeof sportCoached === 'string' && sportCoached.startsWith('[')) {
+                    // Already JSON string, keep as is
+                    sportCoached = sportCoached;
+                } else {
+                    // Single sport as string
+                    sportCoached = JSON.stringify([sportCoached]);
+                }
                 const staffId = body && body.staff_id ? String(body.staff_id) : currentUser.staff_id;
                 if (!sportCoached || !staffId) {
                     return jsonResponse({ error: 'sport_coached and staff_id required' }, 400);
@@ -466,8 +510,18 @@ export async function onRequest(context) {
                 await updateEntity(body, ['status', 'admin_comment'], null, null);
 
                 if (nextStatus === 'approved') {
+                    // Handle sport_coached as array or string
+                    let sportCoachedArray = reg.sport_coached;
+                    if (typeof sportCoachedArray === 'string') {
+                        try {
+                            sportCoachedArray = JSON.parse(sportCoachedArray);
+                        } catch {
+                            sportCoachedArray = [sportCoachedArray];
+                        }
+                    }
+                    const sportCoachedJson = Array.isArray(sportCoachedArray) ? JSON.stringify(sportCoachedArray) : JSON.stringify([sportCoachedArray]);
                     await env.DB.prepare('UPDATE users SET role = ?, teacher_status = ?, profile_complete = ?, sport_coached = ?, staff_id = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?')
-                        .bind('teacher', 'approved', 1, reg.sport_coached, reg.staff_id, reg.user_email)
+                        .bind('teacher', 'approved', 1, sportCoachedJson, reg.staff_id, reg.user_email)
                         .run();
                 }
                 if (nextStatus === 'rejected') {
@@ -487,7 +541,11 @@ export async function onRequest(context) {
             if (method === 'GET') {
                 if (id) {
                     if (isAdmin) return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
-                    if (isTeacher) return getEntity({ allowedWhereColumns: ['id', 'sport'], forcedWhere: { sport: currentUser.sport_coached } });
+                    if (isTeacher) {
+                        const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
+                        const row = await env.DB.prepare(`SELECT * FROM training_logs WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
+                        return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
+                    }
                     return getEntity({ allowedWhereColumns: ['id', 'user_email'], forcedWhere: { user_email: currentUser.email } });
                 }
 
@@ -499,11 +557,13 @@ export async function onRequest(context) {
                     });
                 }
                 if (isTeacher) {
-                    return listEntity({
-                        allowedWhereColumns: ['id', 'sport', 'date'],
-                        allowedSortColumns: ['created_at', 'date'],
-                        forcedWhere: { sport: currentUser.sport_coached }
-                    });
+                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
+                    const where = queryWhere || {};
+                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date']);
+                    const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
+                    const finalSql = `SELECT * FROM training_logs ${sql} ${sportSql} ${orderLimit}`.trim();
+                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
+                    return jsonResponse(results);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport', 'date'],
@@ -542,7 +602,12 @@ export async function onRequest(context) {
             if (method === 'GET') {
                 if (id) {
                     if (isAdmin) return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
-                    if (isTeacher) return getEntity({ allowedWhereColumns: ['id', 'sport'], forcedWhere: { sport: currentUser.sport_coached } });
+                    if (isTeacher) {
+                        const teacherSports = parseJsonArray(currentUser.sport_coached);
+                        const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
+                        const row = await env.DB.prepare(`SELECT * FROM venue_bookings WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
+                        return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
+                    }
                     return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
                 }
                 if (isAdmin) {
@@ -553,11 +618,14 @@ export async function onRequest(context) {
                     });
                 }
                 if (isTeacher) {
-                    return listEntity({
-                        allowedWhereColumns: ['id', 'sport', 'date', 'status'],
-                        allowedSortColumns: ['created_at', 'date'],
-                        forcedWhere: { sport: currentUser.sport_coached }
-                    });
+                    const teacherSports = parseJsonArray(currentUser.sport_coached);
+                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
+                    const where = queryWhere || {};
+                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport', 'date', 'status']);
+                    const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
+                    const finalSql = `SELECT * FROM venue_bookings ${sql} ${sportSql} ${orderLimit}`.trim();
+                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
+                    return jsonResponse(results);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'sport', 'date', 'status'],
@@ -599,8 +667,9 @@ export async function onRequest(context) {
                 }
 
                 if (isTeacher) {
-                    if (booking.sport !== currentUser.sport_coached) return jsonResponse({ error: 'Forbidden' }, 403);
-                    return updateEntity(body, ['status', 'teacher_comment'], { sport: currentUser.sport_coached }, null);
+                    const teacherSports = parseJsonArray(currentUser.sport_coached);
+                    if (!teacherSports.includes(booking.sport)) return jsonResponse({ error: 'Forbidden' }, 403);
+                    return updateEntity(body, ['status', 'teacher_comment'], null, null);
                 }
 
                 return jsonResponse({ error: 'Forbidden' }, 403);
@@ -630,11 +699,13 @@ export async function onRequest(context) {
                     });
                 }
                 if (isTeacher) {
-                    return listEntity({
-                        allowedWhereColumns: ['id', 'sport'],
-                        allowedSortColumns: ['created_at'],
-                        forcedWhere: { sport: currentUser.sport_coached }
-                    });
+                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
+                    const where = queryWhere || {};
+                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport']);
+                    const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
+                    const finalSql = `SELECT * FROM team_memberships ${sql} ${sportSql} ${orderLimit}`.trim();
+                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
+                    return jsonResponse(results);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport'],

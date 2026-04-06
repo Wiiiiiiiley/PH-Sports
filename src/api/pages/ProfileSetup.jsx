@@ -16,7 +16,7 @@ export default function ProfileSetup({ onComplete }) {
   const [studentId, setStudentId] = useState("");
   const [staffId, setStaffId] = useState("");
   const [grade, setGrade] = useState("");
-  const [sportCoached, setSportCoached] = useState("");
+  const [sportsCoached, setSportsCoached] = useState([]); // Changed to array for multi-select
   const [selectedSports, setSelectedSports] = useState([]);
   const [saving, setSaving] = useState(false);
   const [teacherPending, setTeacherPending] = useState(false);
@@ -37,8 +37,8 @@ export default function ProfileSetup({ onComplete }) {
       toast.error("Please fill all fields and select at least one sport");
       return;
     }
-    if (role === "teacher" && (!staffId || !sportCoached)) {
-      toast.error("Please fill all fields");
+    if (role === "teacher" && (!staffId || sportsCoached.length === 0)) {
+      toast.error("Please fill all fields and select at least one sport");
       return;
     }
 
@@ -58,12 +58,12 @@ export default function ProfileSetup({ onComplete }) {
         onComplete();
       } else {
         // Teacher: create a pending registration record, don't mark profile_complete
-        await api.auth.updateMe({ role, profile_complete: false, staff_id: staffId, sport_coached: sportCoached, teacher_status: "pending" });
+        await api.auth.updateMe({ role, profile_complete: false, staff_id: staffId, sport_coached: sportsCoached, teacher_status: "pending" });
         await api.entities.TeacherRegistration.create({
           user_email: user.email,
           user_name: user.full_name,
           staff_id: staffId,
-          sport_coached: sportCoached,
+          sport_coached: sportsCoached, // Now an array
           status: "pending",
         });
         setSaving(false);
@@ -171,17 +171,27 @@ export default function ProfileSetup({ onComplete }) {
                   <Input value={staffId} onChange={e => setStaffId(e.target.value)} placeholder="e.g. T001" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Sport to Coach</Label>
-                  <Select value={sportCoached} onValueChange={setSportCoached}>
-                    <SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger>
-                    <SelectContent>
-                      {ALL_SPORTS.map(sport => (
-                        <SelectItem key={sport} value={sport}>
-                          {SPORT_ICONS[sport]} {sport}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Select Sports to Coach</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALL_SPORTS.map(sport => (
+                      <label key={sport} className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
+                        sportsCoached.includes(sport)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/30"
+                      }`}>
+                        <Checkbox
+                          checked={sportsCoached.includes(sport)}
+                          onCheckedChange={() => {
+                            setSportsCoached(prev =>
+                              prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
+                            );
+                          }}
+                        />
+                        <span className="text-lg">{SPORT_ICONS[sport]}</span>
+                        <span className="text-sm font-medium">{sport}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </>
             )}

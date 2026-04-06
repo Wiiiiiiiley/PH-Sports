@@ -32,7 +32,20 @@ export default function Teams() {
   const { data: memberships = [] } = useQuery({
     queryKey: ["memberships"],
     queryFn: () => {
-      if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
+      if (isTeacher) {
+        // Handle both array and string formats for sport_coached
+        const teacherSports = Array.isArray(user.sport_coached) 
+          ? user.sport_coached 
+          : user.sport_coached ? [user.sport_coached] : [];
+        if (teacherSports.length === 0) return [];
+        if (teacherSports.length === 1) {
+          return api.entities.TeamMembership.filter({ sport: teacherSports[0] });
+        }
+        // For multiple sports, fetch all and filter client-side (backend will filter by IN clause)
+        return api.entities.TeamMembership.filter({}, "-created_at", 500).then(data => 
+          data.filter(m => teacherSports.includes(m.sport))
+        );
+      }
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
       return api.entities.TeamMembership.filter({ user_email: user.email });
     },
@@ -41,7 +54,16 @@ export default function Teams() {
   const { data: announcements = [] } = useQuery({
     queryKey: ["team-announcements"],
     queryFn: () => {
-      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_at", 20);
+      if (isTeacher) {
+        const teacherSports = Array.isArray(user.sport_coached) 
+          ? user.sport_coached 
+          : user.sport_coached ? [user.sport_coached] : [];
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side
+        return api.entities.Announcement.list("-created_at", 100).then(data =>
+          data.filter(a => teacherSports.includes(a.sport))
+        );
+      }
       return api.entities.Announcement.list("-created_at", 50);
     },
   });
@@ -79,7 +101,7 @@ export default function Teams() {
   };
 
   const mySports = isTeacher
-    ? [user.sport_coached].filter(Boolean)
+    ? (Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached]).filter(Boolean)
     : isAdmin
       ? [...new Set(ALL_SPORTS)]
       : [...new Set(memberships.map(m => m.sport))];

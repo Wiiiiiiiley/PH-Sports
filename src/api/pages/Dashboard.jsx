@@ -32,32 +32,62 @@ export default function Dashboard() {
   const isAdmin = user?.role === "admin";
   const isStudent = !isTeacher && !isAdmin;
 
-  // Students see their own memberships, teachers see all memberships for their sport, admins see all
+  // Helper to get teacher's sports as array
+  const getTeacherSports = () => {
+    if (!user?.sport_coached) return [];
+    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
+  };
+
+  // Students see their own memberships, teachers see all memberships for their sport(s), admins see all
   const { data: memberships = [] } = useQuery({
     queryKey: ["memberships", user?.email, user?.sport_coached],
     queryFn: () => {
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
-      if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
+      if (isTeacher) {
+        const teacherSports = getTeacherSports();
+        if (teacherSports.length === 0) return [];
+        if (teacherSports.length === 1) {
+          return api.entities.TeamMembership.filter({ sport: teacherSports[0] });
+        }
+        // For multiple sports, fetch all and filter client-side
+        return api.entities.TeamMembership.list("-created_at", 500).then(data =>
+          data.filter(m => teacherSports.includes(m.sport))
+        );
+      }
       return api.entities.TeamMembership.filter({ user_email: user.email });
     },
   });
 
-  // Training logs - teachers see their sport's logs, students see their own, admins see all
+  // Training logs - teachers see their sport(s)' logs, students see their own, admins see all
   const { data: logs = [] } = useQuery({
     queryKey: ["logs-dash", user?.email, user?.sport_coached],
     queryFn: () => {
       if (isAdmin) return api.entities.TrainingLog.list("-date", 10);
-      if (isTeacher) return api.entities.TrainingLog.filter({ sport: user.sport_coached }, "-date", 10);
+      if (isTeacher) {
+        const teacherSports = getTeacherSports();
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side by teacher's sports
+        return api.entities.TrainingLog.list("-date", 100).then(data =>
+          data.filter(l => teacherSports.includes(l.sport)).slice(0, 10)
+        );
+      }
       return api.entities.TrainingLog.filter({ user_email: user.email }, "-date", 5);
     },
   });
 
-  // Bookings - students see all, teachers see their sport's bookings, admins see all
+  // Bookings - students see all, teachers see their sport(s)' bookings, admins see all
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings-dash", user?.sport_coached],
     queryFn: () => {
       if (isAdmin) return api.entities.VenueBooking.list("-date", 20);
-      if (isTeacher) return api.entities.VenueBooking.filter({ sport: user.sport_coached }, "-date", 20);
+      if (isTeacher) {
+        const teacherSports = getTeacherSports();
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side
+        return api.entities.VenueBooking.list("-date", 100).then(data =>
+          data.filter(b => teacherSports.includes(b.sport)).slice(0, 20)
+        );
+      }
       return api.entities.VenueBooking.list("-date", 10);
     },
   });
@@ -67,7 +97,14 @@ export default function Dashboard() {
     queryKey: ["announcements-dash", user?.email],
     queryFn: () => {
       if (isAdmin) return api.entities.Announcement.list("-created_at", 50);
-      if (isTeacher) return api.entities.Announcement.filter({ sport: user.sport_coached }, "-created_at", 20);
+      if (isTeacher) {
+        const teacherSports = getTeacherSports();
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side
+        return api.entities.Announcement.list("-created_at", 100).then(data =>
+          data.filter(a => teacherSports.includes(a.sport)).slice(0, 20)
+        );
+      }
       return api.entities.Announcement.list("-created_at", 100);
     },
   });
@@ -76,8 +113,8 @@ export default function Dashboard() {
   const pendingBookings = bookings.filter(b => b.status === "pending");
   const upcomingBookings = bookings.filter(b => b.status === "approved" && new Date(b.date) >= new Date());
   
-  // For students: their teams, for teachers: their sport, for admins: all sports
-  const myTeamsSports = isTeacher ? [user.sport_coached] : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
+  // For students: their teams, for teachers: their sport(s), for admins: all sports
+  const myTeamsSports = isTeacher ? getTeacherSports() : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
   const relevantAnnouncements = announcements.filter(a => myTeamsSports.includes(a.sport));
 
   return (
@@ -87,7 +124,7 @@ export default function Dashboard() {
           Welcome back, {user?.full_name?.split(" ")[0] || "there"}! 👋
         </h1>
         <p className="text-muted-foreground mt-1">
-          {isTeacher ? `Coaching ${user.sport_coached}` : "Here's your sports overview"}
+          {isTeacher ? `Coaching: ${getTeacherSports().join(", ") || "No sports assigned"}` : "Here's your sports overview"}
         </p>
       </div>
 

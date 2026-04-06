@@ -26,7 +26,18 @@ export default function ManageRequests() {
     queryKey: ["all-bookings-manage"],
     queryFn: () => {
       if (user.role === 'admin') return api.entities.VenueBooking.list("-created_at", 500);
-      return api.entities.VenueBooking.filter({ sport: user.sport_coached }, "-created_at", 100);
+      // Teacher: handle both single sport (string) and multi-sport (array)
+      const teacherSports = Array.isArray(user.sport_coached) 
+        ? user.sport_coached 
+        : user.sport_coached ? [user.sport_coached] : [];
+      if (teacherSports.length === 0) return [];
+      if (teacherSports.length === 1) {
+        return api.entities.VenueBooking.filter({ sport: teacherSports[0] }, "-created_at", 100);
+      }
+      // For multiple sports, fetch all and filter client-side
+      return api.entities.VenueBooking.list("-created_at", 200).then(data =>
+        data.filter(b => teacherSports.includes(b.sport))
+      );
     },
   });
 
