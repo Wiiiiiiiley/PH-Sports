@@ -79,7 +79,7 @@ export default function Teams() {
   };
 
   const mySports = isTeacher
-    ? [user.sport_coached]
+    ? [user.sport_coached].filter(Boolean)
     : isAdmin
       ? [...new Set(ALL_SPORTS)]
       : [...new Set(memberships.map(m => m.sport))];
