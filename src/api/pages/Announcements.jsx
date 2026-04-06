@@ -29,6 +29,7 @@ export default function Announcements() {
     sport: "",
     priority: "normal",
   });
+  const [selectedSports, setSelectedSports] = useState([]); // 多选运动队
 
   // Fetch announcements - teacher sees only their own, admin sees all
   const { data: announcements = [], isLoading } = useQuery({
@@ -80,19 +81,33 @@ export default function Announcements() {
       toast.error("请输入内容");
       return;
     }
-    if (!formData.sport) {
-      toast.error("请选择运动项目");
+    if (selectedSports.length === 0) {
+      toast.error("请选择至少一个运动项目");
       return;
     }
 
-    createAnnouncement.mutate({
-      title: formData.title.trim(),
-      content: formData.content.trim(),
-      sport: formData.sport,
-      priority: formData.priority,
-      teacher_email: user.email,
-      created_at: new Date().toISOString(),
-    });
+    // Create announcements for each selected sport
+    const promises = selectedSports.map(sport => 
+      createAnnouncement.mutateAsync({
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        sport,
+        priority: formData.priority,
+        teacher_email: user.email,
+        created_at: new Date().toISOString(),
+      })
+    );
+
+    Promise.all(promises)
+      .then(() => {
+        toast.success(`公告已发布到 ${selectedSports.length} 个运动项目！`);
+        setFormData({ title: "", content: "", priority: "normal" });
+        setSelectedSports([]);
+        setIsCreateOpen(false);
+      })
+      .catch((error) => {
+        toast.error(error?.response?.data?.error || "发布失败，请重试");
+      });
   };
 
   const handleDelete = (id) => {
@@ -158,19 +173,32 @@ export default function Announcements() {
 
             {/* Sport Selection */}
             <div>
-              <Label htmlFor="sport">运动项目 *</Label>
-              <Select value={formData.sport} onValueChange={(value) => setFormData({ ...formData, sport: value })}>
-                <SelectTrigger id="sport">
-                  <SelectValue placeholder="选择运动项目" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSports.map((sport) => (
-                    <SelectItem key={sport} value={sport}>
-                      {sport}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">选择运动项目 *</Label>
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 border rounded-md bg-background">
+                {availableSports.map(sport => (
+                  <button
+                    key={sport}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSports(prev => 
+                        prev.includes(sport) 
+                          ? prev.filter(s => s !== sport)
+                          : [...prev, sport]
+                      );
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm border transition-all ${
+                      selectedSports.includes(sport)
+                        ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent shadow-sm`
+                        : "bg-white border-gray-300 text-gray-700 hover:border-primary/50 hover:bg-gray-50"
+                    }`}
+                  >
+                    {SPORT_ICONS[sport]} {sport}
+                  </button>
+                ))}
+              </div>
+              {selectedSports.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">已选择: {selectedSports.join(", ")}</p>
+              )}
             </div>
 
             {/* Priority */}
@@ -194,7 +222,7 @@ export default function Announcements() {
               </Button>
               <Button
                 onClick={handleCreateClick}
-                disabled={createAnnouncement.isPending}
+                disabled={createAnnouncement.isPending || selectedSports.length === 0}
               >
                 {createAnnouncement.isPending ? (
                   <>
@@ -202,7 +230,7 @@ export default function Announcements() {
                     发布中...
                   </>
                 ) : (
-                  "发布"
+                  `发布到 ${selectedSports.length || 0} 个项目`
                 )}
               </Button>
             </div>
