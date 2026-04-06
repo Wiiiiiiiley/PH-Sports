@@ -547,6 +547,10 @@ export async function onRequest(context) {
                 if (id) {
                     if (isAdmin) return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
                     if (isTeacher) {
+                        const sports = parseJsonArray(currentUser.sport_coached);
+                        if (sports.length === 0) {
+                            return jsonResponse({ error: 'Not found' }, 404); // Return 404 if no sports coached
+                        }
                         const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
                         const row = await env.DB.prepare(`SELECT * FROM training_logs WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
                         return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
@@ -613,6 +617,9 @@ export async function onRequest(context) {
                     if (isAdmin) return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
                     if (isTeacher) {
                         const teacherSports = parseJsonArray(currentUser.sport_coached);
+                        if (teacherSports.length === 0) {
+                            return jsonResponse({ error: 'Not found' }, 404); // Return 404 if no sports coached
+                        }
                         const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
                         const row = await env.DB.prepare(`SELECT * FROM venue_bookings WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
                         return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
