@@ -46,10 +46,7 @@ export default function Dashboard() {
       if (isTeacher) {
         const teacherSports = getTeacherSports();
         if (teacherSports.length === 0) return [];
-        if (teacherSports.length === 1) {
-          return api.entities.TeamMembership.filter({ sport: teacherSports[0] });
-        }
-        // For multiple sports, fetch all and filter client-side
+        // Simplified: fetch all and filter client-side
         return api.entities.TeamMembership.list("-created_at", 500).then(data =>
           data.filter(m => teacherSports.includes(m.sport))
         );

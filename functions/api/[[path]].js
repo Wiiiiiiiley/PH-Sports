@@ -723,16 +723,18 @@ export async function onRequest(context) {
                 }
                 if (isTeacher) {
                     const sports = parseJsonArray(currentUser.sport_coached);
+                    console.log('Team memberships - teacher sports:', sports);
                     if (sports.length === 0) {
+                        console.log('Team memberships - no sports coached, returning empty');
                         return jsonResponse([]); // Return empty if no sports coached
                     }
-                    const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
-                    const where = queryWhere || {};
-                    const { sql, bindings } = buildWhereClause(where, ['id', 'sport']);
+                    
+                    // Simplified query: fetch all and filter in JavaScript
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
-                    const finalSql = `SELECT * FROM team_memberships ${sql} ${sportSql} ${orderLimit}`.trim();
-                    const { results } = await env.DB.prepare(finalSql).bind(...bindings, ...sportBindings).all();
-                    return jsonResponse(results);
+                    const { results } = await env.DB.prepare(`SELECT * FROM team_memberships ${orderLimit}`).all();
+                    const filteredResults = results.filter(membership => sports.includes(membership.sport));
+                    console.log('Team memberships - filtered results:', filteredResults.length);
+                    return jsonResponse(filteredResults);
                 }
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport'],
