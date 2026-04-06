@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/AuthContext';
 import { api } from '@/api';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Shield, Edit, AlertTriangle, Loader2, Save, X } from 'lucide-react';
+import { Shield, Edit, AlertTriangle, Loader2, Save, X, ChevronDown, Users } from 'lucide-react';
+import { SPORT_ICONS } from '@/lib/sports-config';
 
 const AdminPanel = () => {
   const { user: currentUser, checkUserAuth } = useAuth();
@@ -23,8 +25,10 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [teamMemberships, setTeamMemberships] = useState([]);
+  const [loadingMemberships, setLoadingMemberships] = useState(false);
+  const [expandedSports, setExpandedSports] = useState({});
 
-  // Check if current user is admin
   const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
@@ -35,8 +39,30 @@ const AdminPanel = () => {
         password: '',
         confirmPassword: ''
       });
+      fetchTeamMemberships();
     }
   }, [isAdmin, currentUser]);
+
+  const fetchTeamMemberships = async () => {
+    try {
+      setLoadingMemberships(true);
+      const data = await api.entities.TeamMembership.list();
+      setTeamMemberships(data || []);
+    } catch (err) {
+      console.error('Failed to fetch team memberships:', err);
+    } finally {
+      setLoadingMemberships(false);
+    }
+  };
+
+  const groupedByTeam = teamMemberships.reduce((acc, membership) => {
+    const sport = membership.sport || '未分配';
+    if (!acc[sport]) {
+      acc[sport] = [];
+    }
+    acc[sport].push(membership);
+    return acc;
+  }, {});
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +71,6 @@ const AdminPanel = () => {
     setSuccess('');
 
     try {
-      // Validate form
       if (!editForm.full_name.trim()) {
         setError('请输入姓名');
         setLoading(false);
@@ -62,33 +87,26 @@ const AdminPanel = () => {
         return;
       }
 
-      // Prepare update data
       const updates = {
         full_name: editForm.full_name.trim(),
         email: editForm.email.trim()
       };
 
-      // Only include password if it's provided
       if (editForm.password) {
         updates.password = editForm.password;
       }
 
-      // Update admin profile
       await api.auth.updateMe(updates);
-
-      // Refresh user data
       await checkUserAuth();
 
       setSuccess('管理员信息更新成功！');
       setIsEditDialogOpen(false);
 
-      // Clear password fields
       setEditForm(prev => ({
         ...prev,
         password: '',
         confirmPassword: ''
       }));
-
     } catch (err) {
       setError(err?.response?.data?.error || '更新失败，请重试');
     } finally {
@@ -230,6 +248,71 @@ const AdminPanel = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Team Memberships */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2" />
+            队伍成员管理
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingMemberships ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : Object.keys(groupedByTeam).length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无队伍成员</p>
+          ) : (
+            <div className="space-y-2">
+              {Object.entries(groupedByTeam)
+                .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
+                .map(([sport, members]) => (
+                  <Collapsible
+                    key={sport}
+                    open={expandedSports[sport] || false}
+                    onOpenChange={(open) => setExpandedSports(prev => ({ ...prev, [sport]: open }))}
+                    className="border rounded-lg"
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <ChevronDown 
+                            className={`h-5 w-5 transition-transform ${expandedSports[sport] ? 'rotate-180' : ''}`}
+                          />
+                          <span className="text-lg">
+                            {SPORT_ICONS[sport] || '🏀'}
+                          </span>
+                          <span className="font-semibold">{sport}</span>
+                          <span className="text-sm text-muted-foreground">({members.length} 名学生)</span>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-4 pb-4">
+                      <div className="space-y-2 border-t pt-4">
+                        {members.map((member, idx) => (
+                          <div
+                            key={member.id || idx}
+                            className="flex items-center justify-between p-3 bg-muted/30 rounded-md"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium">{member.user_name || '未知'}</p>
+                              <p className="text-xs text-muted-foreground">{member.user_email || '未知'}</p>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {member.created_at ? format(new Date(member.created_at), 'MM-dd', { locale: zhCN }) : ''}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
