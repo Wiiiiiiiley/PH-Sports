@@ -134,7 +134,7 @@ export default function Teams() {
                 <div><Label>Content</Label><Textarea value={annContent} onChange={e => setAnnContent(e.target.value)} placeholder="Write your announcement..." rows={4} /></div>
                 <div>
                   <Label className="mb-2 block">Select Sports</Label>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 border rounded-md bg-background">
                     {ALL_SPORTS.map(sport => (
                       <button
                         key={sport}
@@ -146,10 +146,10 @@ export default function Teams() {
                               : [...prev, sport]
                           );
                         }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm border transition-all ${
                           annSports.includes(sport)
-                            ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent`
-                            : "bg-card border-border text-muted-foreground hover:border-primary/30"
+                            ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent shadow-sm`
+                            : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:bg-accent"
                         }`}
                       >
                         {SPORT_ICONS[sport]} {sport}
@@ -157,7 +157,7 @@ export default function Teams() {
                     ))}
                   </div>
                   {annSports.length > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">Selected: {annSports.join(", ")}</p>
+                    <p className="text-xs text-muted-foreground mt-2">Selected: {annSports.join(", ")}</p>
                   )}
                 </div>
                 <div><Label>Priority</Label>
