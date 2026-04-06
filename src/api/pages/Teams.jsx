@@ -26,6 +26,7 @@ export default function Teams() {
   const [annTitle, setAnnTitle] = useState("");
   const [annContent, setAnnContent] = useState("");
   const [annPriority, setAnnPriority] = useState("normal");
+  const [annSports, setAnnSports] = useState([]); // 多选运动队
   const [selectedSport, setSelectedSport] = useState(null);
 
   const { data: memberships = [] } = useQuery({
@@ -49,22 +50,32 @@ export default function Teams() {
     mutationFn: (data) => api.entities.Announcement.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-announcements"] });
-      setAnnouncementOpen(false);
-      setAnnTitle(""); setAnnContent(""); setAnnPriority("normal");
-      toast.success("Announcement posted!");
     },
   });
 
-  const handlePostAnnouncement = () => {
+  const handlePostAnnouncement = async () => {
     if (!annTitle || !annContent) { toast.error("Please fill all fields"); return; }
-    createAnnouncement.mutate({
-      teacher_email: user.email,
-      teacher_name: user.full_name,
-      sport: user.sport_coached,
-      title: annTitle,
-      content: annContent,
-      priority: annPriority,
-    });
+    if (annSports.length === 0) { toast.error("Please select at least one sport"); return; }
+    
+    // 批量发布到选中的所有运动队
+    const promises = annSports.map(sport => 
+      createAnnouncement.mutateAsync({
+        teacher_email: user.email,
+        teacher_name: user.full_name,
+        sport: sport,
+        title: annTitle,
+        content: annContent,
+        priority: annPriority,
+      })
+    );
+    
+    await Promise.all(promises);
+    toast.success(`Announcement posted to ${annSports.length} team(s)!`);
+    setAnnouncementOpen(false);
+    setAnnTitle(""); 
+    setAnnContent(""); 
+    setAnnPriority("normal");
+    setAnnSports([]);
   };
 
   const mySports = isTeacher
@@ -96,6 +107,34 @@ export default function Teams() {
               <div className="space-y-4">
                 <div><Label>Title</Label><Input value={annTitle} onChange={e => setAnnTitle(e.target.value)} placeholder="Announcement title" /></div>
                 <div><Label>Content</Label><Textarea value={annContent} onChange={e => setAnnContent(e.target.value)} placeholder="Write your announcement..." rows={4} /></div>
+                <div>
+                  <Label className="mb-2 block">Select Sports</Label>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
+                    {ALL_SPORTS.map(sport => (
+                      <button
+                        key={sport}
+                        type="button"
+                        onClick={() => {
+                          setAnnSports(prev => 
+                            prev.includes(sport) 
+                              ? prev.filter(s => s !== sport)
+                              : [...prev, sport]
+                          );
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
+                          annSports.includes(sport)
+                            ? `${SPORT_COLORS[sport]?.bg || "bg-primary"} text-white border-transparent`
+                            : "bg-card border-border text-muted-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {SPORT_ICONS[sport]} {sport}
+                      </button>
+                    ))}
+                  </div>
+                  {annSports.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">Selected: {annSports.join(", ")}</p>
+                  )}
+                </div>
                 <div><Label>Priority</Label>
                   <Select value={annPriority} onValueChange={setAnnPriority}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -106,9 +145,9 @@ export default function Teams() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button className="w-full" onClick={handlePostAnnouncement} disabled={createAnnouncement.isPending}>
+                <Button className="w-full" onClick={handlePostAnnouncement} disabled={createAnnouncement.isPending || annSports.length === 0}>
                   {createAnnouncement.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Post Announcement
+                  Post to {annSports.length || 0} Team{annSports.length !== 1 ? "s" : ""}
                 </Button>
               </div>
             </DialogContent>
