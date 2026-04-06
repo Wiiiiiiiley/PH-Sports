@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Users, Megaphone, Loader2, Trophy } from "lucide-react";
 import { ALL_SPORTS, SPORT_ICONS, SPORT_COLORS } from "@/lib/sports-config";
 import { format } from "date-fns";
@@ -97,13 +97,16 @@ export default function Teams() {
             {isTeacher ? `Coaching ${user.sport_coached}` : `Member of ${mySports.length} team(s)`}
           </p>
         </div>
-        {isTeacher && (
+        {(isTeacher || isAdmin) && (
           <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
             <DialogTrigger asChild>
               <Button><Megaphone className="h-4 w-4 mr-2" />Post Announcement</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>New Team Announcement</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>New Team Announcement</DialogTitle>
+                <DialogDescription>Post an announcement to one or more sports teams.</DialogDescription>
+              </DialogHeader>
               <div className="space-y-4">
                 <div><Label>Title</Label><Input value={annTitle} onChange={e => setAnnTitle(e.target.value)} placeholder="Announcement title" /></div>
                 <div><Label>Content</Label><Textarea value={annContent} onChange={e => setAnnContent(e.target.value)} placeholder="Write your announcement..." rows={4} /></div>
