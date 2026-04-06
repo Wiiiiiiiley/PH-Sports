@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Users, BookOpen, CalendarDays, Megaphone, Loader2, Trash2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CheckCircle, XCircle, Users, BookOpen, CalendarDays, Megaphone, Loader2, Trash2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { SPORT_ICONS } from "@/lib/sports-config";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [rejectComment, setRejectComment] = useState("");
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [expandedSports, setExpandedSports] = useState({});
 
   const { data: registrations = [] } = useQuery({
     queryKey: ["teacher-registrations"],
@@ -191,19 +193,63 @@ export default function AdminDashboard() {
 
         {/* Team Memberships */}
         <TabsContent value="memberships" className="mt-4 space-y-2">
-          {allMemberships.map(m => (
-            <Card key={m.id} className="border-0 shadow-sm">
-              <CardContent className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{m.user_name}</p>
-                  <p className="text-xs text-muted-foreground">{m.user_email} · {SPORT_ICONS[m.sport]} {m.sport}</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteMembership.mutate(m.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {allMemberships.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No team memberships yet</p>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(
+                allMemberships.reduce((acc, m) => {
+                  const sport = m.sport || 'No Sport';
+                  if (!acc[sport]) {
+                    acc[sport] = [];
+                  }
+                  acc[sport].push(m);
+                  return acc;
+                }, {})
+              )
+                .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
+                .map(([sport, members]) => (
+                  <Collapsible
+                    key={sport}
+                    open={expandedSports[sport] || false}
+                    onOpenChange={(open) => setExpandedSports(prev => ({ ...prev, [sport]: open }))}
+                    className="border rounded-lg bg-white shadow-sm"
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center space-x-3 flex-1">
+                          <ChevronDown
+                            className={`h-5 w-5 transition-transform ${expandedSports[sport] ? 'rotate-180' : ''}`}
+                          />
+                          <span className="text-lg">
+                            {SPORT_ICONS[sport] || '🏀'}
+                          </span>
+                          <span className="font-semibold text-gray-800">{sport}</span>
+                          <Badge variant="secondary" className="text-xs">{members.length} members</Badge>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="border-t">
+                      <div className="divide-y divide-gray-100">
+                        {members.map(m => (
+                          <Card key={m.id} className="border-0 shadow-none rounded-none">
+                            <CardContent className="p-3 flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-sm">{m.user_name}</p>
+                                <p className="text-xs text-muted-foreground">{m.user_email}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteMembership.mutate(m.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* Bookings */}
