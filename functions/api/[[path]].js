@@ -595,10 +595,11 @@ export async function onRequest(context) {
                     console.log('Training logs - filtered results:', filteredResults.length);
                     return jsonResponse(filteredResults);
                 }
+                // Students can view all training logs (for leaderboard display)
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport', 'date'],
                     allowedSortColumns: ['created_at', 'date'],
-                    forcedWhere: { user_email: currentUser.email }
+                    forcedWhere: null
                 });
             }
 
