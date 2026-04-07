@@ -42,9 +42,13 @@ export default function Leaderboard({ sport, members }) {
       const nextMonth = new Date(parseInt(year), parseInt(month), 1);
       const end = format(nextMonth, "yyyy-MM-dd");
       
+      console.log('🔥 Training logs query - sport:', sport, 'month:', selectedMonth);
       // All users use the same API to fetch training logs for the sport
       // Privacy protection is handled in the display logic
-      return api.entities.TrainingLog.filter({ sport }, "-date", 500);
+      return api.entities.TrainingLog.filter({ sport }, "-date", 500).then(data => {
+        console.log('🔥 Training logs response:', data);
+        return data;
+      });
     },
     enabled: !!sport,
   });
