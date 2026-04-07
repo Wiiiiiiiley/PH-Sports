@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { ALL_SPORTS, SPORT_COLORS, SPORT_ICONS } from "@/lib/sports-config";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getTeacherSports } from "@/lib/teacherUtils";
 
 export default function Announcements() {
   const { user } = useAuth();
@@ -31,16 +32,35 @@ export default function Announcements() {
   });
   const [selectedSports, setSelectedSports] = useState([]); // 多选运动队
 
-  // Fetch announcements - teacher sees only their own, admin sees all
+  // Fetch announcements - teachers see all announcements for their sports, admin sees all
   const { data: announcements = [], isLoading } = useQuery({
-    queryKey: ["announcements", user?.email],
+    queryKey: ["announcements", user?.email, user?.sport_coached],
     queryFn: () => {
       if (isAdmin) {
         return api.entities.Announcement.list("-created_at", 100);
       }
-      return api.entities.Announcement.filter({ teacher_email: user.email }, "-created_at", 100);
+      if (isTeacher) {
+        const teacherSports = getTeacherSports(user);
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side by teacher's sports
+        return api.entities.Announcement.list("-created_at", 100).then(data =>
+          data.filter(a => teacherSports.includes(a.sport))
+        );
+      }
+      // Students see announcements for their teams
+      return api.entities.TeamMembership.filter({ user_email: user.email }).then(memberships => {
+        const userSports = memberships.map(m => m.sport);
+        return api.entities.Announcement.list("-created_at", 100).then(data =>
+          data.filter(a => userSports.includes(a.sport))
+        );
+      });
     },
   });
+
+  // Debug: Log data for troubleshooting
+  console.log('Announcements Debug - User:', user);
+  console.log('Announcements Debug - Teacher sports:', isTeacher ? getTeacherSports(user) : 'N/A');
+  console.log('Announcements Debug - Fetched announcements:', announcements);
 
   // Create announcement
   const createAnnouncement = useMutation({

@@ -46,6 +46,13 @@ export default function DebugTeacher() {
   const filteredLogs = logs.filter(l => teacherSports.includes(l.sport));
   const filteredAnnouncements = announcements.filter(a => teacherSports.includes(a.sport));
 
+  // Additional debug info
+  console.log('Debug Teacher - Raw sport_coached:', user?.sport_coached);
+  console.log('Debug Teacher - Raw sport_coached type:', typeof user?.sport_coached);
+  console.log('Debug Teacher - All memberships:', memberships);
+  console.log('Debug Teacher - All announcements:', announcements);
+  console.log('Debug Teacher - All logs:', logs);
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>

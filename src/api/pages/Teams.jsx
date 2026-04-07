@@ -64,12 +64,10 @@ export default function Teams() {
   });
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ["team-announcements"],
+    queryKey: ["team-announcements", user?.sport_coached],
     queryFn: () => {
       if (isTeacher) {
-        const teacherSports = Array.isArray(user.sport_coached) 
-          ? user.sport_coached 
-          : user.sport_coached ? [user.sport_coached] : [];
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side
         return api.entities.Announcement.list("-created_at", 100).then(data =>
@@ -113,7 +111,7 @@ export default function Teams() {
   };
 
   const mySports = isTeacher
-    ? (Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached]).filter(Boolean)
+    ? getTeacherSports(user)
     : isAdmin
       ? [...new Set(ALL_SPORTS)]
       : [...new Set(memberships.map(m => m.sport))];
@@ -122,13 +120,22 @@ export default function Teams() {
   const sportMembers = memberships.filter(m => m.sport === activeSport);
   const myAnnouncements = announcements.filter(a => mySports.includes(a.sport));
 
+  // Debug: Log data for troubleshooting
+  console.log('Teams Debug - User:', user);
+  console.log('Teams Debug - Teacher sports:', getTeacherSports(user));
+  console.log('Teams Debug - My sports:', mySports);
+  console.log('Teams Debug - Active sport:', activeSport);
+  console.log('Teams Debug - Memberships:', memberships);
+  console.log('Teams Debug - Sport members:', sportMembers);
+  console.log('Teams Debug - Announcements:', announcements);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Teams</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {isTeacher ? `Coaching ${user.sport_coached}` : `Member of ${mySports.length} team(s)`}
+            {isTeacher ? `Coaching ${getTeacherSports(user).join(", ") || "No sports assigned"}` : `Member of ${mySports.length} team(s)`}
           </p>
         </div>
         {(isTeacher || isAdmin) && (
