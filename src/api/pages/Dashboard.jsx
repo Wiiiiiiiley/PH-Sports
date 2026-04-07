@@ -109,12 +109,7 @@ export default function Dashboard() {
   const myTeamsSports = isTeacher ? getTeacherSports(user) : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
   const relevantAnnouncements = announcements.filter(a => myTeamsSports.includes(a.sport));
 
-  // Debug: Log user data and sports
-  console.log('Dashboard Debug - User:', user);
-  console.log('Dashboard Debug - Teacher sports:', getTeacherSports(user));
-  console.log('Dashboard Debug - User role:', user?.role);
-  console.log('Dashboard Debug - Teacher status:', user?.teacher_status);
-
+  
   return (
     <div className="space-y-6">
       <div>

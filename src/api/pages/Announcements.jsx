@@ -41,22 +41,11 @@ export default function Announcements() {
       }
       if (isTeacher) {
         const teacherSports = getTeacherSports(user);
-        console.log('Announcements Page - Teacher sports:', teacherSports);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side by teacher's sports
-        return api.entities.Announcement.list("-created_at", 100).then(data => {
-          console.log('Announcements Page - All announcements from API:', data);
-          const filtered = data.filter(a => teacherSports.includes(a.sport));
-          console.log('Announcements Page - Filtered results:', filtered);
-          
-          // Debug matching details
-          data.forEach((ann, index) => {
-            const matches = teacherSports.includes(ann.sport);
-            console.log(`Announcement ${index + 1}: "${ann.sport}" in teacher sports: ${matches}`);
-          });
-          
-          return filtered;
-        });
+        return api.entities.Announcement.list("-created_at", 100).then(data =>
+          data.filter(a => teacherSports.includes(a.sport))
+        );
       }
       // Students see announcements for their teams
       return api.entities.TeamMembership.filter({ user_email: user.email }).then(memberships => {
@@ -68,11 +57,7 @@ export default function Announcements() {
     },
   });
 
-  // Debug: Log data for troubleshooting
-  console.log('Announcements Debug - User:', user);
-  console.log('Announcements Debug - Teacher sports:', isTeacher ? getTeacherSports(user) : 'N/A');
-  console.log('Announcements Debug - Fetched announcements:', announcements);
-
+  
   // Create announcement
   const createAnnouncement = useMutation({
     mutationFn: (data) => api.entities.Announcement.create(data),
@@ -229,78 +214,60 @@ export default function Announcements() {
           </CardContent>
         </Card>
       ) : (
-        <>
-          {/* Debug Info */}
-          <Card className="border-0 shadow-sm mb-4">
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">Debug Information</h4>
-                <div className="text-sm space-y-1">
-                  <div>✅ Data fetched from API: {announcements.length} announcements</div>
-                  <div>✅ Teacher sports: {getTeacherSports(user).length} sports</div>
-                  <div>✅ Filter should work: Yes</div>
-                  <div className="text-blue-600 font-medium">🔍 If you see announcements above, filtering works!</div>
-                  <div className="text-red-600 font-medium">❌ If you see "还没有公告" below, there's a UI issue</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="grid gap-3">
-            {announcements.map((ann) => (
-              <Card key={ann.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">
-                          {SPORT_ICONS[ann.sport] || "📋"}
-                        </span>
-                        <h3 className="text-base font-semibold truncate">
-                          {ann.title}
-                        </h3>
-                        <Badge
-                          className={cn(
-                            "text-[10px] shrink-0",
-                            ann.priority === "urgent"
-                              ? "bg-red-100 text-red-700"
-                              : ann.priority === "important"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-700"
-                          )}
-                        >
-                          {ann.priority === "urgent" ? "🔴 紧急" : ann.priority === "important" ? "重要" : "普通"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {ann.content}
-                      </p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-white",
-                          SPORT_COLORS[ann.sport]?.bg || "bg-muted"
-                        )}>
-                          {ann.sport}
-                        </span>
-                        <span>
-                          {format(new Date(ann.created_at), "MMM d, yyyy · HH:mm")}
-                        </span>
-                      </div>
+        <div className="grid gap-3">
+          {announcements.map((ann) => (
+            <Card key={ann.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">
+                        {SPORT_ICONS[ann.sport] || "📋"}
+                      </span>
+                      <h3 className="text-base font-semibold truncate">
+                        {ann.title}
+                      </h3>
+                      <Badge
+                        className={cn(
+                          "text-[10px] shrink-0",
+                          ann.priority === "urgent"
+                            ? "bg-red-100 text-red-700"
+                            : ann.priority === "important"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                        )}
+                      >
+                        {ann.priority === "urgent" ? "🔴 紧急" : ann.priority === "important" ? "重要" : "普通"}
+                      </Badge>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(ann.id)}
-                      disabled={deleteAnnouncement.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {ann.content}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-white",
+                        SPORT_COLORS[ann.sport]?.bg || "bg-muted"
+                      )}>
+                        {ann.sport}
+                      </span>
+                      <span>
+                        {format(new Date(ann.created_at), "MMM d, yyyy · HH:mm")}
+                      </span>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(ann.id)}
+                    disabled={deleteAnnouncement.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

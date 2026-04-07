@@ -47,44 +47,7 @@ export default function DebugTeacher() {
   const filteredLogs = logs.filter(l => teacherSports.includes(l.sport));
   const filteredAnnouncements = announcements.filter(a => teacherSports.includes(a.sport));
 
-  // Additional debug info
-  console.log('Debug Teacher - Raw sport_coached:', user?.sport_coached);
-  console.log('Debug Teacher - Raw sport_coached type:', typeof user?.sport_coached);
-  console.log('Debug Teacher - All memberships:', memberships);
-  console.log('Debug Teacher - All announcements:', announcements);
-  console.log('Debug Teacher - All logs:', logs);
-
-  // Test direct API call for announcements
-  useEffect(() => {
-    const testAnnouncements = async () => {
-      try {
-        const allAnnouncements = await api.entities.Announcement.list("-created_at", 100);
-        console.log('Debug Teacher - Direct API call - all announcements:', allAnnouncements);
-        
-        const teacherSports = getTeacherSports();
-        console.log('Debug Teacher - Teacher sports for filtering:', teacherSports);
-        
-        const filtered = allAnnouncements.filter(a => teacherSports.includes(a.sport));
-        console.log('Debug Teacher - Filtered announcements:', filtered);
-        
-        // Debug sport matching
-        console.log('Debug Teacher - Sport matching details:');
-        allAnnouncements.forEach((ann, index) => {
-          const matches = teacherSports.includes(ann.sport);
-          console.log(`  Announcement ${index + 1}: "${ann.sport}" matches: ${matches}`);
-          console.log(`    Available sports:`, teacherSports);
-          console.log(`    Exact match check:`, teacherSports.some(sport => sport === ann.sport));
-        });
-      } catch (error) {
-        console.error('Debug Teacher - API call error:', error);
-      }
-    };
-    
-    if (user?.email) {
-      testAnnouncements();
-    }
-  }, [user?.email]);
-
+  
   return (
     <div className="space-y-6 max-w-4xl">
       <div>

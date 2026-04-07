@@ -120,15 +120,7 @@ export default function Teams() {
   const sportMembers = memberships.filter(m => m.sport === activeSport);
   const myAnnouncements = announcements.filter(a => mySports.includes(a.sport));
 
-  // Debug: Log data for troubleshooting
-  console.log('Teams Debug - User:', user);
-  console.log('Teams Debug - Teacher sports:', getTeacherSports(user));
-  console.log('Teams Debug - My sports:', mySports);
-  console.log('Teams Debug - Active sport:', activeSport);
-  console.log('Teams Debug - Memberships:', memberships);
-  console.log('Teams Debug - Sport members:', sportMembers);
-  console.log('Teams Debug - Announcements:', announcements);
-
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
