@@ -784,7 +784,7 @@ export async function onRequest(context) {
             if (method === 'GET') {
                 // Admin - get all memberships with team info
                 if (isAdmin) {
-                    const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
+                    const orderLimit = buildOrderLimit(sort, limit, ['tm.created_at']);
                     const { results } = await env.DB.prepare(`
                         SELECT tm.id, tm.user_email, tm.user_name, tm.team_id, tm.role, tm.created_at, t.name as team_name, t.sport
                         FROM team_memberships tm
@@ -817,7 +817,7 @@ export async function onRequest(context) {
                 }
                 
                 // Students - get all memberships with team info
-                const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
+                const orderLimit = buildOrderLimit(sort, limit, ['tm.created_at']);
                 const { results } = await env.DB.prepare(`
                     SELECT tm.id, tm.user_email, tm.user_name, tm.team_id, tm.role, tm.created_at, t.name as team_name, t.sport
                     FROM team_memberships tm
