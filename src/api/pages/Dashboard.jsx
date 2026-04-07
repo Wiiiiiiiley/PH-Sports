@@ -119,11 +119,6 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1">
           {isTeacher ? `Coaching: ${getTeacherSports(user).join(", ") || "No sports assigned"}` : "Here's your sports overview"}
         </p>
-        {isTeacher && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Status: {user?.teacher_status || 'unknown'} | Sports count: {getTeacherSports(user).length}
-          </p>
-        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
