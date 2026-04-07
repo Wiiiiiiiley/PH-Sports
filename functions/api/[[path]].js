@@ -658,16 +658,20 @@ export async function onRequest(context) {
             }
 
             if (method === 'POST') {
-                if (isTeacher && !isAdmin) {
-                    return jsonResponse({ error: 'Only students can create booking requests' }, 403);
+                // Teachers and admins can create bookings, students create requests
+                if (!isTeacher && !isAdmin) {
+                    return jsonResponse({ error: 'Only teachers and admins can create venue bookings' }, 403);
                 }
                 const body = await readJsonBody();
                 if (!body || !body.sport || !body.venue || !body.date || !body.time_slot) {
                     return jsonResponse({ error: 'sport, venue, date, time_slot required' }, 400);
                 }
                 const sport = String(body.sport);
-                const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
-                if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
+                // Teachers and admins don't need to be team members to create bookings
+                if (!isTeacher && !isAdmin) {
+                    const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
+                    if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
+                }
 
                 return createEntity(
                     body,
@@ -675,7 +679,7 @@ export async function onRequest(context) {
                     {
                         booked_by_email: currentUser.email,
                         booked_by_name: body.booked_by_name || currentUser.full_name,
-                        status: 'pending'
+                        status: (isTeacher || isAdmin) ? 'approved' : 'pending'
                     }
                 );
             }
