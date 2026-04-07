@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
+import { useAuth } from "@/lib/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal } from "lucide-react";
@@ -30,6 +31,7 @@ function getMonthOptions() {
 export default function Leaderboard({ sport, members }) {
   const months = useMemo(() => getMonthOptions(), []);
   const [selectedMonth, setSelectedMonth] = React.useState(months[0].value);
+  const { user } = useAuth();
 
   const { data: logs = [] } = useQuery({
     queryKey: ["leaderboard-logs", sport, selectedMonth],
@@ -55,11 +57,14 @@ export default function Leaderboard({ sport, members }) {
       return d === selectedMonth;
     });
 
-    // Group by member
+    // Group by member with privacy protection
     const byMember = {};
+    const isStudent = user?.role === "student";
+    
     members.forEach(m => {
       byMember[m.user_email] = { name: m.user_name, email: m.user_email, logs: [] };
     });
+    
     monthLogs.forEach(l => {
       if (byMember[l.user_email]) {
         byMember[l.user_email].logs.push(l);
@@ -68,13 +73,29 @@ export default function Leaderboard({ sport, members }) {
       }
     });
 
-    const entries = Object.values(byMember).map(m => ({
-      name: m.name,
-      email: m.email,
-      score: metric ? metric.compute(m.logs) : m.logs.length,
-      sessions: m.logs.length,
-    }));
-
+    const entries = Object.values(byMember).map(m => {
+      const memberLogs = m.logs;
+      const score = metric ? metric.compute(memberLogs) : memberLogs.length;
+      const sessions = memberLogs.length;
+      
+      // Privacy protection: students only see their own detailed data
+      if (isStudent && m.email !== user.email) {
+        return {
+          name: m.name,
+          email: m.email,
+          score: score,
+          sessions: 0, // Hide session count for other students
+        };
+      }
+      
+      return {
+        name: m.name,
+        email: m.email,
+        score: score,
+        sessions: sessions,
+      };
+    });
+    
     entries.sort((a, b) => b.score - a.score);
     return entries.map((e, i) => ({ ...e, rank: i + 1 }));
   }, [logs, members, selectedMonth, metric]);

@@ -118,10 +118,8 @@ export default function Teams() {
 
   const activeSport = selectedSport || mySports[0] || "";
   const sportMembers = memberships.filter(m => m.sport === activeSport);
-  // For students, only show their own data in leaderboard
-  const leaderboardMembers = isStudent 
-    ? sportMembers.filter(m => m.user_email === user.email)
-    : sportMembers;
+  // Students can see all team members in leaderboard but privacy is protected in Leaderboard component
+  const leaderboardMembers = sportMembers;
   const myAnnouncements = announcements.filter(a => mySports.includes(a.sport));
 
   
