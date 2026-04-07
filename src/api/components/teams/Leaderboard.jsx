@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
+import apiClient from "../apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -45,10 +46,8 @@ export default function Leaderboard({ sport, members }) {
       // For students, fetch all training logs for the sport to build leaderboard
       // Privacy will be handled in the display logic
       if (user?.role === "student") {
-        // Create a custom query function that bypasses normal filtering
-        return api.entities.TrainingLog.list("-date", 500).then(allLogs =>
-          allLogs.filter(log => log.sport === sport)
-        );
+        // Use the special leaderboard query endpoint
+        return apiClient.get(`/training-logs?for_leaderboard=true&sport=${encodeURIComponent(sport)}&sort=-date&limit=500`);
       }
       
       // Teachers and admins use normal filtering
