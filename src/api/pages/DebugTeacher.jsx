@@ -66,6 +66,15 @@ export default function DebugTeacher() {
         
         const filtered = allAnnouncements.filter(a => teacherSports.includes(a.sport));
         console.log('Debug Teacher - Filtered announcements:', filtered);
+        
+        // Debug sport matching
+        console.log('Debug Teacher - Sport matching details:');
+        allAnnouncements.forEach((ann, index) => {
+          const matches = teacherSports.includes(ann.sport);
+          console.log(`  Announcement ${index + 1}: "${ann.sport}" matches: ${matches}`);
+          console.log(`    Available sports:`, teacherSports);
+          console.log(`    Exact match check:`, teacherSports.some(sport => sport === ann.sport));
+        });
       } catch (error) {
         console.error('Debug Teacher - API call error:', error);
       }

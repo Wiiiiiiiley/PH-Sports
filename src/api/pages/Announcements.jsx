@@ -41,11 +41,22 @@ export default function Announcements() {
       }
       if (isTeacher) {
         const teacherSports = getTeacherSports(user);
+        console.log('Announcements Page - Teacher sports:', teacherSports);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side by teacher's sports
-        return api.entities.Announcement.list("-created_at", 100).then(data =>
-          data.filter(a => teacherSports.includes(a.sport))
-        );
+        return api.entities.Announcement.list("-created_at", 100).then(data => {
+          console.log('Announcements Page - All announcements from API:', data);
+          const filtered = data.filter(a => teacherSports.includes(a.sport));
+          console.log('Announcements Page - Filtered results:', filtered);
+          
+          // Debug matching details
+          data.forEach((ann, index) => {
+            const matches = teacherSports.includes(ann.sport);
+            console.log(`Announcement ${index + 1}: "${ann.sport}" in teacher sports: ${matches}`);
+          });
+          
+          return filtered;
+        });
       }
       // Students see announcements for their teams
       return api.entities.TeamMembership.filter({ user_email: user.email }).then(memberships => {
