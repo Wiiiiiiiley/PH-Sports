@@ -118,6 +118,10 @@ export default function Teams() {
 
   const activeSport = selectedSport || mySports[0] || "";
   const sportMembers = memberships.filter(m => m.sport === activeSport);
+  // For students, only show their own data in leaderboard
+  const leaderboardMembers = isStudent 
+    ? sportMembers.filter(m => m.user_email === user.email)
+    : sportMembers;
   const myAnnouncements = announcements.filter(a => mySports.includes(a.sport));
 
   
@@ -241,7 +245,7 @@ export default function Teams() {
 
           {/* Leaderboard tab */}
           <TabsContent value="leaderboard" className="mt-4">
-            <Leaderboard sport={activeSport} members={sportMembers} />
+            <Leaderboard sport={activeSport} members={leaderboardMembers} />
           </TabsContent>
 
           {/* Announcements tab */}
