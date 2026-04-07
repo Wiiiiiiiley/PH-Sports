@@ -29,14 +29,26 @@ export default function Teams() {
   const [annSports, setAnnSports] = useState([]); // 多选运动队
   const [selectedSport, setSelectedSport] = useState(null);
 
+  // Helper to get teacher's sports as array
+  const getTeacherSports = () => {
+    if (!user?.sport_coached) return [];
+    // Handle JSON string format from backend
+    if (typeof user.sport_coached === 'string') {
+      try {
+        const parsed = JSON.parse(user.sport_coached);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [user.sport_coached];
+      }
+    }
+    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
+  };
+
   const { data: memberships = [] } = useQuery({
     queryKey: ["memberships"],
     queryFn: () => {
       if (isTeacher) {
-        // Handle both array and string formats for sport_coached
-        const teacherSports = Array.isArray(user.sport_coached) 
-          ? user.sport_coached 
-          : user.sport_coached ? [user.sport_coached] : [];
+        const teacherSports = getTeacherSports();
         if (teacherSports.length === 0) return [];
         if (teacherSports.length === 1) {
           return api.entities.TeamMembership.filter({ sport: teacherSports[0] });

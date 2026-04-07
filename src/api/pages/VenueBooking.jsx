@@ -63,10 +63,25 @@ export default function VenueBooking() {
     },
   });
 
+  // Helper to get teacher's sports as array
+  const getTeacherSports = () => {
+    if (!user?.sport_coached) return [];
+    // Handle JSON string format from backend
+    if (typeof user.sport_coached === 'string') {
+      try {
+        const parsed = JSON.parse(user.sport_coached);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [user.sport_coached];
+      }
+    }
+    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
+  };
+
   const myVenueSports = isAdmin
     ? VENUE_SPORTS
     : isTeacher
-      ? VENUE_SPORTS.filter(s => s === user.sport_coached)
+      ? VENUE_SPORTS.filter(s => getTeacherSports().includes(s))
       : VENUE_SPORTS.filter(s => memberships.some(m => m.sport === s));
 
   const createBooking = useMutation({

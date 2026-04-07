@@ -89,7 +89,13 @@ export default function TeacherProfile() {
     setSavingSports(true);
     try {
       await api.auth.updateMe({ sport_coached: selectedSports });
+      // Force refresh user data and clear all related query caches
       await checkUserAuth();
+      queryClient.invalidateQueries({ queryKey: ["memberships"] });
+      queryClient.invalidateQueries({ queryKey: ["logs-dash"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings-dash"] });
+      queryClient.invalidateQueries({ queryKey: ["announcements-dash"] });
+      queryClient.invalidateQueries({ queryKey: ["my-sport-memberships"] });
       toast.success("Coaching sports updated successfully!");
     } catch (err) {
       const msg = err.response?.data?.error || err.message || "Failed to update coaching sports";

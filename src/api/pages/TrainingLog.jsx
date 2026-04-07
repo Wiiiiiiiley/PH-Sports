@@ -17,6 +17,21 @@ import TrainingCharts from "@/components/training/TrainingCharts";
 
 export default function TrainingLog() {
   const { user } = useAuth();
+
+  // Helper to get teacher's sports as array
+  const getTeacherSports = () => {
+    if (!user?.sport_coached) return [];
+    // Handle JSON string format from backend
+    if (typeof user.sport_coached === 'string') {
+      try {
+        const parsed = JSON.parse(user.sport_coached);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [user.sport_coached];
+      }
+    }
+    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
+  };
   const isTeacher = user?.role === "teacher" || user?.role === "admin";
   const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
@@ -27,7 +42,14 @@ export default function TrainingLog() {
     queryKey: ["my-memberships"],
     queryFn: () => {
       if (user?.role === "admin") return api.entities.TeamMembership.list("-created_at", 500);
-      if (user?.role === "teacher") return api.entities.TeamMembership.filter({ sport: user.sport_coached });
+      if (user?.role === "teacher") {
+        const teacherSports = getTeacherSports();
+        if (teacherSports.length === 0) return [];
+        // Fetch all and filter client-side for multiple sports
+        return api.entities.TeamMembership.list("-created_at", 500).then(data =>
+          data.filter(m => teacherSports.includes(m.sport))
+        );
+      }
       return api.entities.TeamMembership.filter({ user_email: user.email });
     },
   });
@@ -35,7 +57,7 @@ export default function TrainingLog() {
   const mySports = user?.role === "admin"
     ? [...new Set(memberships.map(m => m.sport))]
     : isTeacher
-      ? [user.sport_coached]
+      ? getTeacherSports()
       : [...new Set(memberships.map(m => m.sport))];
   const activeSport = selectedSport || mySports[0] || "";
 

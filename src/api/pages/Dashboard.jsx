@@ -9,6 +9,7 @@ import { CalendarDays, ClipboardList, Bell, Trophy, Clock, MapPin } from "lucide
 import { format } from "date-fns";
 import { SPORT_ICONS, SPORT_COLORS } from "@/lib/sports-config";
 import { Link } from "react-router-dom";
+import { getTeacherSports } from "@/lib/teacherUtils";
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
@@ -32,19 +33,13 @@ export default function Dashboard() {
   const isAdmin = user?.role === "admin";
   const isStudent = !isTeacher && !isAdmin;
 
-  // Helper to get teacher's sports as array
-  const getTeacherSports = () => {
-    if (!user?.sport_coached) return [];
-    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
-  };
-
   // Students see their own memberships, teachers see all memberships for their sport(s), admins see all
   const { data: memberships = [] } = useQuery({
     queryKey: ["memberships", user?.email, user?.sport_coached],
     queryFn: () => {
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
       if (isTeacher) {
-        const teacherSports = getTeacherSports();
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         // Simplified: fetch all and filter client-side
         return api.entities.TeamMembership.list("-created_at", 500).then(data =>
@@ -61,7 +56,7 @@ export default function Dashboard() {
     queryFn: () => {
       if (isAdmin) return api.entities.TrainingLog.list("-date", 10);
       if (isTeacher) {
-        const teacherSports = getTeacherSports();
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side by teacher's sports
         return api.entities.TrainingLog.list("-date", 100).then(data =>
@@ -78,7 +73,7 @@ export default function Dashboard() {
     queryFn: () => {
       if (isAdmin) return api.entities.VenueBooking.list("-date", 20);
       if (isTeacher) {
-        const teacherSports = getTeacherSports();
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side
         return api.entities.VenueBooking.list("-date", 100).then(data =>
@@ -95,7 +90,7 @@ export default function Dashboard() {
     queryFn: () => {
       if (isAdmin) return api.entities.Announcement.list("-created_at", 50);
       if (isTeacher) {
-        const teacherSports = getTeacherSports();
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         // Fetch all and filter client-side
         return api.entities.Announcement.list("-created_at", 100).then(data =>
@@ -111,8 +106,14 @@ export default function Dashboard() {
   const upcomingBookings = bookings.filter(b => b.status === "approved" && new Date(b.date) >= new Date());
   
   // For students: their teams, for teachers: their sport(s), for admins: all sports
-  const myTeamsSports = isTeacher ? getTeacherSports() : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
+  const myTeamsSports = isTeacher ? getTeacherSports(user) : isAdmin ? [...new Set(memberships.map(m => m.sport))] : memberships.map(m => m.sport);
   const relevantAnnouncements = announcements.filter(a => myTeamsSports.includes(a.sport));
+
+  // Debug: Log user data and sports
+  console.log('Dashboard Debug - User:', user);
+  console.log('Dashboard Debug - Teacher sports:', getTeacherSports(user));
+  console.log('Dashboard Debug - User role:', user?.role);
+  console.log('Dashboard Debug - Teacher status:', user?.teacher_status);
 
   return (
     <div className="space-y-6">
@@ -121,8 +122,13 @@ export default function Dashboard() {
           Welcome back, {user?.full_name?.split(" ")[0] || "there"}! 👋
         </h1>
         <p className="text-muted-foreground mt-1">
-          {isTeacher ? `Coaching: ${getTeacherSports().join(", ") || "No sports assigned"}` : "Here's your sports overview"}
+          {isTeacher ? `Coaching: ${getTeacherSports(user).join(", ") || "No sports assigned"}` : "Here's your sports overview"}
         </p>
+        {isTeacher && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Status: {user?.teacher_status || 'unknown'} | Sports count: {getTeacherSports(user).length}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

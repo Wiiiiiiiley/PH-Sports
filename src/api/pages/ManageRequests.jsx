@@ -22,14 +22,26 @@ export default function ManageRequests() {
   const [comment, setComment] = useState("");
   const [actionType, setActionType] = useState("");
 
+  // Helper to get teacher's sports as array
+  const getTeacherSports = () => {
+    if (!user?.sport_coached) return [];
+    // Handle JSON string format from backend
+    if (typeof user.sport_coached === 'string') {
+      try {
+        const parsed = JSON.parse(user.sport_coached);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [user.sport_coached];
+      }
+    }
+    return Array.isArray(user.sport_coached) ? user.sport_coached : [user.sport_coached];
+  };
+
   const { data: bookings = [] } = useQuery({
     queryKey: ["all-bookings-manage"],
     queryFn: () => {
       if (user.role === 'admin') return api.entities.VenueBooking.list("-created_at", 500);
-      // Teacher: handle both single sport (string) and multi-sport (array)
-      const teacherSports = Array.isArray(user.sport_coached) 
-        ? user.sport_coached 
-        : user.sport_coached ? [user.sport_coached] : [];
+      const teacherSports = getTeacherSports();
       if (teacherSports.length === 0) return [];
       if (teacherSports.length === 1) {
         return api.entities.VenueBooking.filter({ sport: teacherSports[0] }, "-created_at", 100);
@@ -178,7 +190,7 @@ export default function ManageRequests() {
       <div>
         <h1 className="text-2xl font-bold">Manage Requests</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {isAdmin ? "Review and manage all system requests" : `Review and manage venue booking requests for ${user.sport_coached}`}
+          {isAdmin ? "Review and manage all system requests" : `Review and manage venue booking requests for ${getTeacherSports().join(", ") || "your sports"}`}
         </p>
       </div>
 

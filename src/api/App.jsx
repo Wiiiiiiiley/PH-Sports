@@ -21,6 +21,7 @@ import AdminPanel from '@/pages/AdminPanel';
 import Announcements from '@/pages/Announcements';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import DebugTeacher from '@/pages/DebugTeacher';
 import PublicRoute from '@/components/PublicRoute';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import RoleRoute from '@/components/RoleRoute';
@@ -133,6 +134,11 @@ const AuthenticatedApp = () => {
         <Route path="/admin/panel" element={
           <RoleRoute allowedRoles={['admin']}>
             <AdminPanel />
+          </RoleRoute>
+        } />
+        <Route path="/debug-teacher" element={
+          <RoleRoute allowedRoles={['teacher']}>
+            <DebugTeacher />
           </RoleRoute>
         } />
       </Route>
