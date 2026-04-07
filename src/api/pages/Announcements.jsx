@@ -229,58 +229,88 @@ export default function Announcements() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {announcements.map((ann) => (
-            <Card key={ann.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">
-                        {SPORT_ICONS[ann.sport] || "📋"}
-                      </span>
-                      <h3 className="text-base font-semibold truncate">
-                        {ann.title}
-                      </h3>
-                      <Badge
-                        className={cn(
-                          "text-[10px] shrink-0",
-                          ann.priority === "urgent"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-blue-100 text-blue-700"
-                        )}
-                      >
-                        {ann.priority === "urgent" ? "🔴 紧急" : "普通"}
-                      </Badge>
+        <>
+          {/* Debug: Show all announcements toggle */}
+          <Card className="border-0 shadow-sm mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={true}
+                    onChange={() => {}}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Debug: Show filtered announcements ({announcements.length})</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={false}
+                    onChange={() => {}}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Show all announcements (debug)</span>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="grid gap-3">
+            {announcements.map((ann) => (
+              <Card key={ann.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">
+                          {SPORT_ICONS[ann.sport] || "📋"}
+                        </span>
+                        <h3 className="text-base font-semibold truncate">
+                          {ann.title}
+                        </h3>
+                        <Badge
+                          className={cn(
+                            "text-[10px] shrink-0",
+                            ann.priority === "urgent"
+                              ? "bg-red-100 text-red-700"
+                              : ann.priority === "important"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-gray-100 text-gray-700"
+                          )}
+                        >
+                          {ann.priority === "urgent" ? "🔴 紧急" : ann.priority === "important" ? "重要" : "普通"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {ann.content}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-white",
+                          SPORT_COLORS[ann.sport]?.bg || "bg-muted"
+                        )}>
+                          {ann.sport}
+                        </span>
+                        <span>
+                          {format(new Date(ann.created_at), "MMM d, yyyy · HH:mm")}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                      {ann.content}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-white",
-                        SPORT_COLORS[ann.sport]?.bg || "bg-muted"
-                      )}>
-                        {ann.sport}
-                      </span>
-                      <span>
-                        {format(new Date(ann.created_at), "MMM d, yyyy · HH:mm")}
-                      </span>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(ann.id)}
+                      disabled={deleteAnnouncement.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(ann.id)}
-                    disabled={deleteAnnouncement.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
