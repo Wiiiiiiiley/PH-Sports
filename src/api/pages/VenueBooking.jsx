@@ -86,11 +86,19 @@ export default function VenueBooking() {
 
   const createBooking = useMutation({
     mutationFn: (data) => api.entities.VenueBooking.create(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       setBookingOpen(false);
       resetForm();
-      toast.success("Booking request submitted!");
+      if (isTeacher || isAdmin) {
+        toast.success("Venue booking created and approved!");
+      } else {
+        toast.success("Booking request submitted! Your teacher will review it shortly.");
+      }
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.error || "Failed to create booking";
+      toast.error(message);
     },
   });
 

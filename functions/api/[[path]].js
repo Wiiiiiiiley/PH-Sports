@@ -674,16 +674,14 @@ export async function onRequest(context) {
             }
 
             if (method === 'POST') {
-                // Teachers and admins can create bookings, students create requests
-                if (!isTeacher && !isAdmin) {
-                    return jsonResponse({ error: 'Only teachers and admins can create venue bookings' }, 403);
-                }
+                // Students can create bookings as pending, teachers and admins create as approved
                 const body = await readJsonBody();
                 if (!body || !body.sport || !body.venue || !body.date || !body.time_slot) {
                     return jsonResponse({ error: 'sport, venue, date, time_slot required' }, 400);
                 }
                 const sport = String(body.sport);
-                // Teachers and admins don't need to be team members to create bookings
+                
+                // Students must be team members, teachers and admins don't need to be
                 if (!isTeacher && !isAdmin) {
                     const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
                     if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
