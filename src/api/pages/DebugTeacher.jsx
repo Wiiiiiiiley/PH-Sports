@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SPORT_ICONS } from "@/lib/sports-config";
 
 export default function DebugTeacher() {
   const { user, checkUserAuth } = useAuth();
@@ -118,6 +119,41 @@ export default function DebugTeacher() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Detailed Team Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Team Members by Sport</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {teacherSports.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No sports assigned</div>
+          ) : (
+            <div className="space-y-4">
+              {teacherSports.map(sport => {
+                const sportMembers = memberships.filter(m => m.sport === sport);
+                return (
+                  <div key={sport} className="border rounded-lg p-3">
+                    <h4 className="font-medium mb-2">{SPORT_ICONS[sport] || '🏆'} {sport} ({sportMembers.length} members)</h4>
+                    {sportMembers.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No members in this sport</div>
+                    ) : (
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {sportMembers.map(m => (
+                          <div key={m.id} className="text-sm p-2 bg-secondary/50 rounded">
+                            <div className="font-medium">{m.user_name}</div>
+                            <div className="text-xs text-muted-foreground">{m.user_email}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Sample Data */}
       <Card>

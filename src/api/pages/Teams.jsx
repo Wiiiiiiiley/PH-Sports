@@ -48,7 +48,7 @@ export default function Teams() {
     queryKey: ["memberships"],
     queryFn: () => {
       if (isTeacher) {
-        const teacherSports = getTeacherSports();
+        const teacherSports = getTeacherSports(user);
         if (teacherSports.length === 0) return [];
         if (teacherSports.length === 1) {
           return api.entities.TeamMembership.filter({ sport: teacherSports[0] });
