@@ -791,13 +791,14 @@ export async function onRequest(context) {
                 const body = await readJsonBody();
                 if (!body || !body.team_id) return jsonResponse({ error: 'team_id required' }, 400);
                 
-                // Get team to verify it exists
+                // Get team to verify it exists and get sport info
                 const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(body.team_id).first();
                 if (!team) return jsonResponse({ error: 'Team not found' }, 404);
                 
-                return createEntity(body, ['id', 'user_email', 'user_name', 'team_id', 'role', 'created_at'], {
+                return createEntity(body, ['id', 'user_email', 'user_name', 'team_id', 'sport', 'role', 'created_at'], {
                     user_email: currentUser.email,
                     user_name: currentUser.full_name,
+                    sport: team.sport
                 });
             }
             if (method === 'DELETE' && id) {

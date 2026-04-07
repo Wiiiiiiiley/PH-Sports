@@ -55,9 +55,11 @@ CREATE TABLE IF NOT EXISTS team_memberships (
     id TEXT PRIMARY KEY,
     user_email TEXT NOT NULL,
     user_name TEXT,
+    team_id TEXT NOT NULL,
     sport TEXT NOT NULL,
     role TEXT DEFAULT 'member',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id)
 );
 
 -- Venue Bookings
