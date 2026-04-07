@@ -755,10 +755,11 @@ export async function onRequest(context) {
                     console.log('Team memberships - filtered results:', filteredResults.length);
                     return jsonResponse(filteredResults);
                 }
+                // Students can view all team members (no forced restriction)
                 return listEntity({
                     allowedWhereColumns: ['id', 'user_email', 'sport'],
                     allowedSortColumns: ['created_at'],
-                    forcedWhere: { user_email: currentUser.email }
+                    forcedWhere: null
                 });
             }
             if (method === 'POST') {
