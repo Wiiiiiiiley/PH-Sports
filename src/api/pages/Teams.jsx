@@ -26,7 +26,7 @@ export default function Teams() {
   const [annTitle, setAnnTitle] = useState("");
   const [annContent, setAnnContent] = useState("");
   const [annPriority, setAnnPriority] = useState("normal");
-  const [annSports, setAnnSports] = useState([]); // 多选运动队
+  const [annSports, setAnnSports] = useState([]); // Multiple sports selection
   const [selectedSport, setSelectedSport] = useState(null);
 
   // Helper to get teacher's sports as array
@@ -125,7 +125,7 @@ export default function Teams() {
     if (!annTitle || !annContent) { toast.error("Please fill all fields"); return; }
     if (annSports.length === 0) { toast.error("Please select at least one sport"); return; }
     
-    // 批量发布到选中的所有运动队
+    // 批量Post到选中的所有Team
     const promises = annSports.map(sport => 
       createAnnouncement.mutateAsync({
         teacher_email: user.email,

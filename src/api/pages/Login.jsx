@@ -5,8 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
 import { api } from '@/api';
+import { useLanguage } from '@/lib/LanguageContext';
+import { getTranslation } from '@/lib/translations';
 
 const Login = () => {
+  const { language, toggleLanguage } = useLanguage();
+  const t = (key) => getTranslation(language, key);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -31,7 +36,7 @@ const Login = () => {
 
       window.location.href = '/';
     } catch (err) {
-      const message = err?.response?.data?.error || err?.message || '登录失败，请检查邮箱和密码';
+      const message = err?.response?.data?.error || err?.message || t('checkEmailPassword');
       setError(message);
     } finally {
       setLoading(false);
@@ -47,31 +52,41 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <Button
+          onClick={toggleLanguage}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {language === 'zh' ? '🇬🇧 EN' : '🇨🇳 中'}
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">登录</CardTitle>
+          <CardTitle className="text-2xl text-center">{t('loginTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="请输入邮箱"
+                placeholder={t('enterEmail')}
                 value={formData.email}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="请输入密码"
+                placeholder={t('enterPassword')}
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -81,13 +96,13 @@ const Login = () => {
               <div className="text-red-500 text-sm">{error}</div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? '登录中...' : '登录'}
+              {loading ? t('loggingIn') : t('loginButton')}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            还没有账户？{' '}
+            {t('noAccount')}{' '}
             <Link to="/register" className="text-primary hover:underline">
-              立即注册
+              {t('registerNow')}
             </Link>
           </div>
         </CardContent>

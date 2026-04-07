@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuth } from '@/lib/AuthContext';
 import { api } from '@/api';
 import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Shield, Edit, AlertTriangle, Loader2, Save, X, ChevronDown, Users } from 'lucide-react';
 import { SPORT_ICONS } from '@/lib/sports-config';
 
@@ -56,7 +56,7 @@ const AdminPanel = () => {
   };
 
   const groupedByTeam = teamMemberships.reduce((acc, membership) => {
-    const sport = membership.sport || '未分配';
+    const sport = membership.sport || 'Unassigned';
     if (!acc[sport]) {
       acc[sport] = [];
     }
@@ -72,17 +72,17 @@ const AdminPanel = () => {
 
     try {
       if (!editForm.full_name.trim()) {
-        setError('请输入姓名');
+        setError('Please enter a name');
         setLoading(false);
         return;
       }
       if (!editForm.email.trim()) {
-        setError('请输入邮箱');
+        setError('Please enter an email');
         setLoading(false);
         return;
       }
       if (editForm.password && editForm.password !== editForm.confirmPassword) {
-        setError('两次输入的密码不一致');
+        setError('Passwords do not match');
         setLoading(false);
         return;
       }
@@ -99,7 +99,7 @@ const AdminPanel = () => {
       await api.auth.updateMe(updates);
       await checkUserAuth();
 
-      setSuccess('管理员信息更新成功！');
+      setSuccess('Administrator information updated successfully!');
       setIsEditDialogOpen(false);
 
       setEditForm(prev => ({
@@ -108,7 +108,7 @@ const AdminPanel = () => {
         confirmPassword: ''
       }));
     } catch (err) {
-      setError(err?.response?.data?.error || '更新失败，请重试');
+      setError(err?.response?.data?.error || 'Update failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -120,7 +120,7 @@ const AdminPanel = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            访问被拒绝：只有管理员可以访问此页面
+            Access denied: Only administrators can access this page
           </AlertDescription>
         </Alert>
       </div>
@@ -132,64 +132,64 @@ const AdminPanel = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold flex items-center">
           <Shield className="h-8 w-8 mr-2" />
-          管理员管理
+          Admin Management
         </h1>
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Edit className="h-4 w-4 mr-2" />
-              修改信息
+              Edit Information
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>修改管理员信息</DialogTitle>
-              <DialogDescription>修改管理员的姓名、邮箱或密码。</DialogDescription>
+              <DialogTitle>Edit Administrator Information</DialogTitle>
+              <DialogDescription>Modify the administrator's name, email, or password.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="full_name">管理员姓名 *</Label>
+                <Label htmlFor="full_name">AdministratorName *</Label>
                 <Input
                   id="full_name"
                   type="text"
                   value={editForm.full_name}
                   onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                  placeholder="输入管理员姓名"
+                  placeholder="输入AdministratorName"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">管理员邮箱 *</Label>
+                <Label htmlFor="email">AdministratorEmail *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="输入管理员邮箱"
+                  placeholder="输入AdministratorEmail"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">新密码（可选）</Label>
+                <Label htmlFor="password">新Password（可选）</Label>
                 <Input
                   id="password"
                   type="password"
                   value={editForm.password}
                   onChange={(e) => setEditForm(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="留空则不修改密码"
+                  placeholder="留空则不EditPassword"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">确认新密码</Label>
+                <Label htmlFor="confirmPassword">确认新Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   value={editForm.confirmPassword}
                   onChange={(e) => setEditForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="再次输入新密码"
+                  placeholder="再次输入新Password"
                 />
               </div>
 
@@ -206,13 +206,13 @@ const AdminPanel = () => {
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      保存修改
+                      SaveEdit
                     </>
                   )}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="flex-1">
                   <X className="h-4 w-4 mr-2" />
-                  取消
+                  Cancel
                 </Button>
               </div>
             </form>
@@ -223,27 +223,27 @@ const AdminPanel = () => {
       {/* Admin Info Card */}
       <Card>
         <CardHeader>
-          <CardTitle>当前管理员信息</CardTitle>
+          <CardTitle>当前AdministratorInformation</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">姓名</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Name</Label>
               <p className="text-lg font-medium">{currentUser?.full_name || '未设置'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">邮箱</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Email</Label>
               <p className="text-lg font-medium">{currentUser?.email || '未设置'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">角色</Label>
-              <p className="text-lg font-medium">管理员</p>
+              <Label className="text-sm font-medium text-muted-foreground">Role</Label>
+              <p className="text-lg font-medium">Administrator</p>
             </div>
             <div>
-              <Label className="text-sm font-medium text-muted-foreground">创建时间</Label>
+              <Label className="text-sm font-medium text-muted-foreground">CreateTime</Label>
               <p className="text-lg font-medium">
                 {currentUser?.created_at
-                  ? format(new Date(currentUser.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })
+                  ? format(new Date(currentUser.created_at), 'yyyy-MM-dd HH:mm', { locale: enUS })
                   : '未知'
                 }
               </p>
@@ -257,7 +257,7 @@ const AdminPanel = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Users className="h-5 w-5 mr-2" />
-            队伍成员管理
+            TeamMembersAdmin
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -266,7 +266,7 @@ const AdminPanel = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : Object.keys(groupedByTeam).length === 0 ? (
-            <p className="text-sm text-muted-foreground">暂无队伍成员</p>
+            <p className="text-sm text-muted-foreground">暂无TeamMembers</p>
           ) : (
             <div className="space-y-2">
               {Object.entries(groupedByTeam)
@@ -288,7 +288,7 @@ const AdminPanel = () => {
                             {SPORT_ICONS[sport] || '🏀'}
                           </span>
                           <span className="font-semibold">{sport}</span>
-                          <span className="text-sm text-muted-foreground">({members.length} 名学生)</span>
+                          <span className="text-sm text-muted-foreground">({members.length} 名Student)</span>
                         </div>
                       </div>
                     </CollapsibleTrigger>
@@ -304,7 +304,7 @@ const AdminPanel = () => {
                               <p className="text-xs text-muted-foreground">{member.user_email || '未知'}</p>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {member.created_at ? format(new Date(member.created_at), 'MM-dd', { locale: zhCN }) : ''}
+                              {member.created_at ? format(new Date(member.created_at), 'MM-dd', { locale: enUS }) : ''}
                             </div>
                           </div>
                         ))}
@@ -323,11 +323,11 @@ const AdminPanel = () => {
           <CardTitle>使用说明</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• 系统只允许一个管理员账号</p>
-          <p>• 管理员可以修改自己的姓名、邮箱和密码</p>
-          <p>• 密码字段留空表示不修改密码</p>
-          <p>• 修改邮箱后需要使用新邮箱登录</p>
-          <p>• 请妥善保管管理员账号信息</p>
+          <p>• 系统只允许一个AdministratorAccount</p>
+          <p>• Administrator可以Edit自己的Name、Email和Password</p>
+          <p>• Password字段留空表示不EditPassword</p>
+          <p>• EditEmail后需要使用新EmailLogin</p>
+          <p>• Please妥善保管AdministratorAccountInformation</p>
         </CardContent>
       </Card>
     </div>

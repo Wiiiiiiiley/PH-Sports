@@ -39,7 +39,7 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
     // Check required fields
     fields.forEach(field => {
       if (field.required && !formData[field.key]) {
-        newErrors[field.key] = `${field.label} 是必填项`;
+        newErrors[field.key] = `${field.label} 是Required项`;
       }
     });
     
@@ -74,7 +74,7 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
                 type="number"
                 value={value}
                 onChange={(e) => handleInputChange(field.key, e.target.value)}
-                placeholder={`请输入${field.label}`}
+                placeholder={`Please enter${field.label}`}
                 className={error ? 'border-red-500' : ''}
               />
               {field.unit && <span className="text-sm text-muted-foreground">{field.unit}</span>}
@@ -95,7 +95,7 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
                 type="text"
                 value={value}
                 onChange={(e) => handleInputChange(field.key, e.target.value)}
-                placeholder={`请输入${field.label}`}
+                placeholder={`Please enter${field.label}`}
                 className={error ? 'border-red-500' : ''}
               />
               {field.unit && <span className="text-sm text-muted-foreground">{field.unit}</span>}
@@ -112,7 +112,7 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
               id={field.key}
               value={value}
               onChange={(e) => handleInputChange(field.key, e.target.value)}
-              placeholder={`请输入${field.label}`}
+              placeholder={`Please enter${field.label}`}
               rows={3}
             />
           </div>
@@ -126,20 +126,20 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>训练记录 - {sport}</CardTitle>
+        <CardTitle>Training记录 - {sport}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Session Type Selection */}
           {sessionTypes.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="session_type">训练类型</Label>
+              <Label htmlFor="session_type">Training类型</Label>
               <Select
                 value={formData.session_type}
                 onValueChange={(value) => handleInputChange('session_type', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择训练类型" />
+                  <SelectValue placeholder="选择Training类型" />
                 </SelectTrigger>
                 <SelectContent>
                   {sessionTypes.map(type => (
@@ -159,7 +159,7 @@ const TrainingForm = ({ sport, onSubmit, initialData = {} }) => {
 
           {/* Submit Button */}
           <Button type="submit" className="w-full">
-            保存训练记录
+            SaveTraining记录
           </Button>
         </form>
       </CardContent>

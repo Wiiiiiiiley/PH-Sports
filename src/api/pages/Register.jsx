@@ -6,8 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { api } from '@/api';
+import { useLanguage } from '@/lib/LanguageContext';
+import { getTranslation } from '@/lib/translations';
 
 const Register = () => {
+  const { language, toggleLanguage } = useLanguage();
+  const t = (key) => getTranslation(language, key);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,7 +29,7 @@ const Register = () => {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('密码确认不匹配');
+      setError(t('passwordMismatch'));
       setLoading(false);
       return;
     }
@@ -43,7 +48,7 @@ const Register = () => {
 
       window.location.href = '/';
     } catch (err) {
-      const message = err?.response?.data?.error || err?.message || '注册失败，请重试';
+      const message = err?.response?.data?.error || err?.message || t('tryAgain');
       setError(message);
     } finally {
       setLoading(false);
@@ -66,67 +71,77 @@ const Register = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <Button
+          onClick={toggleLanguage}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {language === 'zh' ? '🇬🇧 EN' : '🇨🇳 中'}
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">注册</CardTitle>
+          <CardTitle className="text-2xl text-center">{t('registerTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">姓名</Label>
+              <Label htmlFor="name">{t('name')}</Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
-                placeholder="请输入姓名"
+                placeholder={t('enterName')}
                 value={formData.name}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="请输入邮箱"
+                placeholder={t('enterEmail')}
                 value={formData.email}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">角色</Label>
+              <Label htmlFor="role">{t('role')}</Label>
               <Select value={formData.role} onValueChange={handleRoleChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择角色" />
+                  <SelectValue placeholder={t('selectRole')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="student">学生</SelectItem>
-                  <SelectItem value="teacher">教师</SelectItem>
+                  <SelectItem value="student">{t('student')}</SelectItem>
+                  <SelectItem value="teacher">{t('teacher')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">密码</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="请输入密码"
+                placeholder={t('enterPassword')}
                 value={formData.password}
                 onChange={handleChange}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">确认密码</Label>
+              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="请再次输入密码"
+                placeholder={t('confirmPasswordPlaceholder')}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
@@ -136,13 +151,13 @@ const Register = () => {
               <div className="text-red-500 text-sm">{error}</div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? '注册中...' : '注册'}
+              {loading ? t('registering') : t('registerButton')}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            已有账户？{' '}
+            {t('hasAccount')}{' '}
             <Link to="/login" className="text-primary hover:underline">
-              立即登录
+              {t('loginNow')}
             </Link>
           </div>
         </CardContent>

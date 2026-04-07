@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SPORT_VENUES, VENUE_SPORTS } from '@/lib/sports-config';
 import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' }) => {
   const [formData, setFormData] = useState({
@@ -44,12 +44,12 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.venue) newErrors.venue = '请选择场地';
-    if (!formData.sport) newErrors.sport = '请选择运动类型';
-    if (!formData.date) newErrors.date = '请选择日期';
-    if (!formData.timeSlot) newErrors.timeSlot = '请选择时间段';
-    if (!formData.purpose) newErrors.purpose = '请填写预约用途';
-    if (!formData.duration || formData.duration < 1) newErrors.duration = '预约时长至少1小时';
+    if (!formData.venue) newErrors.venue = 'Please select a venue';
+    if (!formData.sport) newErrors.sport = 'Please select a sport type';
+    if (!formData.date) newErrors.date = 'Please select a date';
+    if (!formData.timeSlot) newErrors.timeSlot = 'Please select a time';
+    if (!formData.purpose) newErrors.purpose = 'Please describe your purpose';
+    if (!formData.duration || formData.duration < 1) newErrors.duration = 'Duration must be at least 1 hour';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -71,21 +71,21 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>
-          {isEditing ? '场地预约详情' : '新建场地预约'}
+          {isEditing ? 'Booking Details' : 'New Venue Booking'}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Sport Selection */}
           <div className="space-y-2">
-            <Label htmlFor="sport">运动类型 *</Label>
+            <Label htmlFor="sport">Sport Type *</Label>
             <Select
               value={formData.sport}
               onValueChange={(value) => handleInputChange('sport', value)}
               disabled={isEditing}
             >
               <SelectTrigger className={errors.sport ? 'border-red-500' : ''}>
-                <SelectValue placeholder="选择运动类型" />
+                <SelectValue placeholder="Select a sport" />
               </SelectTrigger>
               <SelectContent>
                 {VENUE_SPORTS.map(sport => (
@@ -98,14 +98,14 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
 
           {/* Venue Selection */}
           <div className="space-y-2">
-            <Label htmlFor="venue">场地 *</Label>
+            <Label htmlFor="venue">Venue *</Label>
             <Select
               value={formData.venue}
               onValueChange={(value) => handleInputChange('venue', value)}
               disabled={isEditing}
             >
               <SelectTrigger className={errors.venue ? 'border-red-500' : ''}>
-                <SelectValue placeholder="选择场地" />
+                <SelectValue placeholder="Select a venue" />
               </SelectTrigger>
               <SelectContent>
                 {venues.map(venue => (
@@ -118,7 +118,7 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
 
           {/* Date Selection */}
           <div className="space-y-2">
-            <Label htmlFor="date">预约日期 *</Label>
+            <Label htmlFor="date">Booking Date *</Label>
             <Input
               id="date"
               type="date"
@@ -133,14 +133,14 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
 
           {/* Time Slot Selection */}
           <div className="space-y-2">
-            <Label htmlFor="timeSlot">开始时间 *</Label>
+            <Label htmlFor="timeSlot">Start Time *</Label>
             <Select
               value={formData.timeSlot}
               onValueChange={(value) => handleInputChange('timeSlot', value)}
               disabled={isEditing}
             >
               <SelectTrigger className={errors.timeSlot ? 'border-red-500' : ''}>
-                <SelectValue placeholder="选择开始时间" />
+                <SelectValue placeholder="Select start time" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="07:00">07:00</SelectItem>
@@ -162,20 +162,20 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
 
           {/* Duration */}
           <div className="space-y-2">
-            <Label htmlFor="duration">预约时长 (小时) *</Label>
+            <Label htmlFor="duration">Duration (Hours) *</Label>
             <Select
               value={formData.duration.toString()}
               onValueChange={(value) => handleInputChange('duration', parseInt(value))}
               disabled={isEditing}
             >
               <SelectTrigger className={errors.duration ? 'border-red-500' : ''}>
-                <SelectValue placeholder="选择预约时长" />
+                <SelectValue placeholder="Select duration" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1小时</SelectItem>
-                <SelectItem value="2">2小时</SelectItem>
-                <SelectItem value="3">3小时</SelectItem>
-                <SelectItem value="4">4小时</SelectItem>
+                <SelectItem value="1">1 hour</SelectItem>
+                <SelectItem value="2">2 hours</SelectItem>
+                <SelectItem value="3">3 hours</SelectItem>
+                <SelectItem value="4">4 hours</SelectItem>
               </SelectContent>
             </Select>
             {errors.duration && <p className="text-sm text-red-500">{errors.duration}</p>}
@@ -183,12 +183,12 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
 
           {/* Purpose */}
           <div className="space-y-2">
-            <Label htmlFor="purpose">预约用途 *</Label>
+            <Label htmlFor="purpose">Booking Purpose *</Label>
             <Textarea
               id="purpose"
               value={formData.purpose}
               onChange={(e) => handleInputChange('purpose', e.target.value)}
-              placeholder="请描述预约用途，例如：篮球队训练、个人练习等"
+              placeholder="Describe your booking purpose (e.g., team practice, personal training, etc.)"
               rows={3}
               disabled={isEditing && userRole !== 'teacher'}
               className={errors.purpose ? 'border-red-500' : ''}
@@ -199,11 +199,11 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
           {/* Booking Info */}
           {isEditing && (
             <div className="bg-muted p-4 rounded-lg space-y-2">
-              <h4 className="font-medium">预约信息</h4>
+              <h4 className="font-medium">Booking Information</h4>
               <div className="text-sm text-muted-foreground">
-                <p>预约人: {booking.bookedBy}</p>
-                <p>提交时间: {booking.created_at ? format(new Date(booking.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN }) : '-'}</p>
-                <p>状态: {booking.status}</p>
+                <p>Booked By: {booking.bookedBy}</p>
+                <p>Submitted: {booking.created_at ? format(new Date(booking.created_at), 'yyyy-MM-dd HH:mm', { locale: enUS }) : '-'}</p>
+                <p>Status: {booking.status}</p>
               </div>
             </div>
           )}
@@ -212,23 +212,23 @@ const VenueBookingForm = ({ booking, onSubmit, onCancel, userRole = 'student' })
           <div className="flex space-x-4">
             {!isEditing && (
               <Button type="submit" className="flex-1">
-                提交预约
+                Submit Booking
               </Button>
             )}
             
             {isEditing && userRole === 'teacher' && booking.status === 'pending' && (
               <>
                 <Button type="button" variant="default" className="flex-1" onClick={() => onSubmit({ ...formData, status: 'approved' })}>
-                  批准预约
+                  Approve Booking
                 </Button>
                 <Button type="button" variant="destructive" className="flex-1" onClick={() => onSubmit({ ...formData, status: 'rejected' })}>
-                  拒绝预约
+                  Reject Booking
                 </Button>
               </>
             )}
             
             <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-              {isEditing ? '关闭' : '取消'}
+              {isEditing ? 'Close' : 'Cancel'}
             </Button>
           </div>
         </form>

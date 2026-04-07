@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { SPORT_VENUES, VENUE_SPORTS, TIME_SLOTS, SPORT_COLORS } from '@/lib/sports-config';
 import { format, addDays, startOfWeek, isSameDay, isToday } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
@@ -29,7 +29,7 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
       timeSlot: '10:00',
       duration: 2,
       bookedBy: '张三',
-      purpose: '篮球队训练',
+      purpose: '篮球队Training',
       status: userRole === 'teacher' ? 'approved' : 'pending'
     },
     {
@@ -79,18 +79,18 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>场地预约筛选</CardTitle>
+          <CardTitle>VenueReservationFilter</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">运动类型</label>
+              <label className="text-sm font-medium">Sport Type</label>
               <Select value={selectedSport} onValueChange={setSelectedSport}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择运动类型" />
+                  <SelectValue placeholder="选择Sport Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部运动</SelectItem>
+                  <SelectItem value="">全部Sport</SelectItem>
                   {VENUE_SPORTS.map(sport => (
                     <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                   ))}
@@ -99,13 +99,13 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">场地</label>
+              <label className="text-sm font-medium">Venue</label>
               <Select value={selectedVenue} onValueChange={setSelectedVenue}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择场地" />
+                  <SelectValue placeholder="选择Venue" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部场地</SelectItem>
+                  <SelectItem value="">全部Venue</SelectItem>
                   {venues.map(venue => (
                     <SelectItem key={venue} value={venue}>{venue}</SelectItem>
                   ))}
@@ -134,18 +134,18 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
       {/* Weekly Calendar */}
       <Card>
         <CardHeader>
-          <CardTitle>场地预约日历</CardTitle>
+          <CardTitle>VenueReservation日历</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="border border-border p-2 text-left font-medium">时间/场地</th>
+                  <th className="border border-border p-2 text-left font-medium">Time/Venue</th>
                   {weekDays.map(day => (
                     <th key={day.toISOString()} className="border border-border p-2 text-center min-w-[120px]">
                       <div className="text-sm">
-                        <div>{format(day, 'EEE', { locale: zhCN })}</div>
+                        <div>{format(day, 'EEE', { locale: enUS })}</div>
                         <div className={`font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
                           {format(day, 'MM/dd')}
                         </div>
@@ -215,7 +215,7 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
                                   isNew: true
                                 })}
                               >
-                                预约
+                                Reservation
                               </Button>
                             )}
                           </div>
@@ -232,15 +232,15 @@ const VenueCalendar = ({ onBookingSelect, userRole = 'student' }) => {
           <div className="mt-4 flex items-center space-x-4 text-xs">
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span>已批准</span>
+              <span>Approved</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-              <span>待审批</span>
+              <span>待Review</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-red-500 rounded"></div>
-              <span>已拒绝</span>
+              <span>Rejected</span>
             </div>
           </div>
         </CardContent>
