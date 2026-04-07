@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { api } from "@/api";
 import { useQuery } from "@tanstack/react-query";
@@ -53,6 +53,28 @@ export default function DebugTeacher() {
   console.log('Debug Teacher - All memberships:', memberships);
   console.log('Debug Teacher - All announcements:', announcements);
   console.log('Debug Teacher - All logs:', logs);
+
+  // Test direct API call for announcements
+  useEffect(() => {
+    const testAnnouncements = async () => {
+      try {
+        const allAnnouncements = await api.entities.Announcement.list("-created_at", 100);
+        console.log('Debug Teacher - Direct API call - all announcements:', allAnnouncements);
+        
+        const teacherSports = getTeacherSports();
+        console.log('Debug Teacher - Teacher sports for filtering:', teacherSports);
+        
+        const filtered = allAnnouncements.filter(a => teacherSports.includes(a.sport));
+        console.log('Debug Teacher - Filtered announcements:', filtered);
+      } catch (error) {
+        console.error('Debug Teacher - API call error:', error);
+      }
+    };
+    
+    if (user?.email) {
+      testAnnouncements();
+    }
+  }, [user?.email]);
 
   return (
     <div className="space-y-6 max-w-4xl">
