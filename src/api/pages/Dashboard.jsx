@@ -188,8 +188,9 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Upcoming Bookings */}
-      <Card className="border-0 shadow-sm">
+      {/* Upcoming Bookings - Only for teachers and admins */}
+      {(isTeacher || isAdmin) && (
+        <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Upcoming Venue Bookings</CardTitle>
@@ -218,6 +219,7 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
