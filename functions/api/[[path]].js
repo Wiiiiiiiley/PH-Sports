@@ -608,11 +608,16 @@ export async function onRequest(context) {
                     return jsonResponse({ error: 'Forbidden' }, 403);
                 }
                 const body = await readJsonBody();
-                if (!body || !body.sport) return jsonResponse({ error: 'sport required' }, 400);
-                const sport = String(body.sport);
+                if (!body || !body.team_id) return jsonResponse({ error: 'team_id required' }, 400);
+                const teamId = String(body.team_id);
+                
+                // Get team and sport info
+                const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(teamId).first();
+                if (!team) return jsonResponse({ error: 'Team not found' }, 404);
+                
                 if (!isAdmin) {
-                    const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
-                    if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
+                    const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND team_id = ?').bind(currentUser.email, teamId).first();
+                    if (!member) return jsonResponse({ error: 'You are not a member of this team' }, 403);
                 }
 
                 return createEntity(
@@ -621,7 +626,7 @@ export async function onRequest(context) {
                     {
                         user_email: currentUser.email,
                         user_name: currentUser.full_name,
-                        sport
+                        sport: team.sport
                     }
                 );
             }
@@ -676,15 +681,19 @@ export async function onRequest(context) {
             if (method === 'POST') {
                 // Students can create bookings as pending, teachers and admins create as approved
                 const body = await readJsonBody();
-                if (!body || !body.sport || !body.venue || !body.date || !body.time_slot) {
-                    return jsonResponse({ error: 'sport, venue, date, time_slot required' }, 400);
+                if (!body || !body.team_id || !body.venue || !body.date || !body.time_slot) {
+                    return jsonResponse({ error: 'team_id, venue, date, time_slot required' }, 400);
                 }
-                const sport = String(body.sport);
+                const teamId = String(body.team_id);
+                
+                // Get team and sport info
+                const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(teamId).first();
+                if (!team) return jsonResponse({ error: 'Team not found' }, 404);
                 
                 // Students must be team members, teachers and admins don't need to be
                 if (!isTeacher && !isAdmin) {
-                    const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
-                    if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
+                    const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND team_id = ?').bind(currentUser.email, teamId).first();
+                    if (!member) return jsonResponse({ error: 'You are not a member of this team' }, 403);
                 }
 
                 return createEntity(
@@ -693,6 +702,7 @@ export async function onRequest(context) {
                     {
                         booked_by_email: currentUser.email,
                         booked_by_name: body.booked_by_name || currentUser.full_name,
+                        sport: team.sport,
                         status: (isTeacher || isAdmin) ? 'approved' : 'pending'
                     }
                 );
@@ -732,40 +742,60 @@ export async function onRequest(context) {
         // Remaining entities: basic access rules
         if (tableName === 'team_memberships') {
             if (method === 'GET') {
+                // Admin - get all memberships with team info
                 if (isAdmin) {
-                    return listEntity({
-                        allowedWhereColumns: ['id', 'user_email', 'sport'],
-                        allowedSortColumns: ['created_at'],
-                        forcedWhere: null
-                    });
+                    const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
+                    const { results } = await env.DB.prepare(`
+                        SELECT tm.id, tm.user_email, tm.user_name, tm.team_id, tm.role, tm.created_at, t.name as team_name, t.sport
+                        FROM team_memberships tm
+                        LEFT JOIN teams t ON tm.team_id = t.id
+                        ${orderLimit}
+                    `).all();
+                    return jsonResponse(results || []);
                 }
+                
+                // Teacher - only memberships from their coached teams
                 if (isTeacher) {
                     const sports = parseJsonArray(currentUser.sport_coached);
                     console.log('Team memberships - teacher sports:', sports);
                     if (sports.length === 0) {
                         console.log('Team memberships - no sports coached, returning empty');
-                        return jsonResponse([]); // Return empty if no sports coached
+                        return jsonResponse([]);
                     }
                     
-                    // Simplified query: fetch all and filter in JavaScript
-                    const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
-                    const { results } = await env.DB.prepare(`SELECT * FROM team_memberships ${orderLimit}`).all();
-                    const filteredResults = results.filter(membership => sports.includes(membership.sport));
-                    console.log('Team memberships - filtered results:', filteredResults.length);
-                    return jsonResponse(filteredResults);
+                    const placeholders = sports.map(() => '?').join(', ');
+                    const orderLimit = buildOrderLimit(sort, limit, ['tm.created_at']);
+                    const { results } = await env.DB.prepare(`
+                        SELECT tm.id, tm.user_email, tm.user_name, tm.team_id, tm.role, tm.created_at, t.name as team_name, t.sport
+                        FROM team_memberships tm
+                        LEFT JOIN teams t ON tm.team_id = t.id
+                        WHERE t.sport IN (${placeholders})
+                        ${orderLimit}
+                    `).bind(...sports).all();
+                    console.log('Team memberships - filtered results:', results?.length || 0);
+                    return jsonResponse(results || []);
                 }
-                // Students can view all team members (no forced restriction)
-                return listEntity({
-                    allowedWhereColumns: ['id', 'user_email', 'sport'],
-                    allowedSortColumns: ['created_at'],
-                    forcedWhere: null
-                });
+                
+                // Students - get all memberships with team info
+                const orderLimit = buildOrderLimit(sort, limit, ['created_at']);
+                const { results } = await env.DB.prepare(`
+                    SELECT tm.id, tm.user_email, tm.user_name, tm.team_id, tm.role, tm.created_at, t.name as team_name, t.sport
+                    FROM team_memberships tm
+                    LEFT JOIN teams t ON tm.team_id = t.id
+                    ${orderLimit}
+                `).all();
+                return jsonResponse(results || []);
             }
             if (method === 'POST') {
                 if (isTeacher && !isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
                 const body = await readJsonBody();
-                if (!body || !body.sport) return jsonResponse({ error: 'sport required' }, 400);
-                return createEntity(body, ['id', 'user_email', 'user_name', 'sport', 'role', 'created_at'], {
+                if (!body || !body.team_id) return jsonResponse({ error: 'team_id required' }, 400);
+                
+                // Get team to verify it exists
+                const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(body.team_id).first();
+                if (!team) return jsonResponse({ error: 'Team not found' }, 404);
+                
+                return createEntity(body, ['id', 'user_email', 'user_name', 'team_id', 'role', 'created_at'], {
                     user_email: currentUser.email,
                     user_name: currentUser.full_name,
                 });
