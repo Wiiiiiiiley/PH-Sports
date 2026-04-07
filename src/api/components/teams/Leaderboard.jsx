@@ -113,10 +113,11 @@ export default function Leaderboard({ sport, members }) {
     
     entries.sort((a, b) => b.score - a.score);
     
-    console.log('Leaderboard Debug - Final entries:', entries);
-    console.log('Leaderboard Debug - Ranked length:', entries.length);
+    const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
+    console.log('🎯 Final ranked data:', ranked);
+    console.log('🎯 Ranked entries that will display:', ranked.filter(e => e.score > 0 || e.email === user?.email));
     
-    return entries.map((e, i) => ({ ...e, rank: i + 1 }));
+    return ranked;
   }, [logs, members, selectedMonth, metric, user]);
 
   const isCurrentMonth = selectedMonth === months[0].value;
@@ -167,8 +168,10 @@ export default function Leaderboard({ sport, members }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{entry.name}</p>
-              {entry.sessions > 0 || entry.email === user?.email ? (
-                <p className="text-xs text-muted-foreground">{entry.sessions} session{entry.sessions !== 1 ? "s" : ""}</p>
+              {entry.score > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {entry.email === user?.email ? `${entry.sessions} session${entry.sessions !== 1 ? "s" : ""}` : "Active"}
+                </p>
               ) : (
                 <p className="text-xs text-muted-foreground opacity-50">No activity this month</p>
               )}
