@@ -61,14 +61,40 @@ export default function Teams() {
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
       
       // For students: First get all sports they belong to, then get all members in those sports
+      console.log('🔍 Student query - user.email:', user?.email);
+      console.log('🔍 User object:', user);
+      
+      // Try to find memberships - handle case sensitivity
       return api.entities.TeamMembership.filter({ user_email: user.email }).then(studentMemberships => {
+        console.log('📋 Student memberships found (exact match):', studentMemberships);
+        
+        // If no exact match, try fetching all and filtering client-side with case-insensitive comparison
+        if (studentMemberships.length === 0 && user?.email) {
+          console.warn('⚠️ No exact email match, trying case-insensitive search...');
+          return api.entities.TeamMembership.list("-created_at", 500).then(allMembers => {
+            const userEmailLower = user.email.toLowerCase().trim();
+            const matched = allMembers.filter(m => m.user_email?.toLowerCase().trim() === userEmailLower);
+            console.log('📋 Case-insensitive match found:', matched.length, 'records');
+            return matched;
+          });
+        }
+        
+        return studentMemberships;
+      }).then(studentMemberships => {
         const studentSports = [...new Set(studentMemberships.map(m => m.sport))];
-        if (studentSports.length === 0) return [];
+        console.log('🏅 Student sports:', studentSports);
+        if (studentSports.length === 0) {
+          console.warn('⚠️ Student has no sports assigned');
+          return [];
+        }
         
         // Fetch all members from sports the student belongs to
-        return api.entities.TeamMembership.filter({}, "-created_at", 500).then(allMembers =>
-          allMembers.filter(m => studentSports.includes(m.sport))
-        );
+        return api.entities.TeamMembership.filter({}, "-created_at", 500).then(allMembers => {
+          console.log('👥 All members fetched:', allMembers.length, 'members');
+          const filtered = allMembers.filter(m => studentSports.includes(m.sport));
+          console.log('✅ Filtered to relevant sports:', filtered.length, 'members');
+          return filtered;
+        });
       });
     },
   });
