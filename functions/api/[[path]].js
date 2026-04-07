@@ -154,8 +154,17 @@ export async function onRequest(context) {
             if (typeof sort === 'string' && sort.length > 0) {
                 const desc = sort.startsWith('-');
                 const col = desc ? sort.slice(1) : sort;
-                if (allowedSortColumns.includes(col)) {
-                    orderSql = `ORDER BY ${col} ${desc ? 'DESC' : 'ASC'}`;
+                // Check if column matches (with or without table alias prefix)
+                const matches = allowedSortColumns.some(allowed => {
+                    if (allowed === col) return true;
+                    // Handle table alias prefix like 'tm.created_at' when col is 'created_at'
+                    if (allowed.includes('.') && allowed.endsWith('.' + col)) return true;
+                    return false;
+                });
+                if (matches) {
+                    // Use the aliased version if available, otherwise use the column as-is
+                    const aliasedCol = allowedSortColumns.find(a => a === col || (a.includes('.') && a.endsWith('.' + col)));
+                    orderSql = `ORDER BY ${aliasedCol || col} ${desc ? 'DESC' : 'ASC'}`;
                 }
             }
             const lim = Math.min(Math.max(parseInt(limit || '0', 10) || 0, 0), 1000);
