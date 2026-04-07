@@ -121,7 +121,7 @@ export default function Leaderboard({ sport, members }) {
     console.log('Leaderboard Debug - Ranked length:', entries.length);
     
     return entries.map((e, i) => ({ ...e, rank: i + 1 }));
-  }, [logs, members, selectedMonth, metric]);
+  }, [logs, members, selectedMonth, metric, user]);
 
   const isCurrentMonth = selectedMonth === months[0].value;
 
