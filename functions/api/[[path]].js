@@ -558,6 +558,21 @@ export async function onRequest(context) {
                     return getEntity({ allowedWhereColumns: ['id', 'user_email'], forcedWhere: { user_email: currentUser.email } });
                 }
 
+                // Handle special query for student leaderboards
+                const url = new URL(request.url);
+                const forLeaderboard = url.searchParams.get('for_leaderboard');
+                
+                if (forLeaderboard === 'true' && isStudent) {
+                    // Students can fetch all training logs for leaderboard purposes
+                    const sport = url.searchParams.get('sport');
+                    if (!sport) return jsonResponse({ error: 'sport parameter required for leaderboard' }, 400);
+                    
+                    const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
+                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs WHERE sport = ? ${orderLimit}`).bind(sport).all();
+                    console.log('Training logs - student leaderboard query, sport:', sport, 'results:', results.length);
+                    return jsonResponse(results);
+                }
+
                 if (isAdmin) {
                     return listEntity({
                         allowedWhereColumns: ['id', 'user_email', 'user_name', 'sport', 'date'],
