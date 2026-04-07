@@ -59,7 +59,17 @@ export default function Teams() {
         );
       }
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
-      return api.entities.TeamMembership.filter({ user_email: user.email });
+      
+      // For students: First get all sports they belong to, then get all members in those sports
+      return api.entities.TeamMembership.filter({ user_email: user.email }).then(studentMemberships => {
+        const studentSports = [...new Set(studentMemberships.map(m => m.sport))];
+        if (studentSports.length === 0) return [];
+        
+        // Fetch all members from sports the student belongs to
+        return api.entities.TeamMembership.filter({}, "-created_at", 500).then(allMembers =>
+          allMembers.filter(m => studentSports.includes(m.sport))
+        );
+      });
     },
   });
 
