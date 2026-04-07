@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import apiClient from "@/api/apiClient";
+import apiClient from "../apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
