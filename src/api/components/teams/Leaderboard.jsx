@@ -50,12 +50,20 @@ export default function Leaderboard({ sport, members }) {
   const color = SPORT_COLORS[sport];
 
   const ranked = useMemo(() => {
+    // Debug: Log data
+    console.log('Leaderboard Debug - User:', user);
+    console.log('Leaderboard Debug - Is Student:', user?.role === "student");
+    console.log('Leaderboard Debug - Members:', members);
+    console.log('Leaderboard Debug - Logs:', logs);
+    
     // Filter logs to selected month
     const [year, month] = selectedMonth.split("-");
     const monthLogs = logs.filter(l => {
       const d = l.date?.slice(0, 7); // "yyyy-MM"
       return d === selectedMonth;
     });
+    
+    console.log('Leaderboard Debug - Month logs:', monthLogs);
 
     // Group by member with privacy protection
     const byMember = {};
@@ -97,6 +105,10 @@ export default function Leaderboard({ sport, members }) {
     });
     
     entries.sort((a, b) => b.score - a.score);
+    
+    console.log('Leaderboard Debug - Final entries:', entries);
+    console.log('Leaderboard Debug - Ranked length:', entries.length);
+    
     return entries.map((e, i) => ({ ...e, rank: i + 1 }));
   }, [logs, members, selectedMonth, metric]);
 
