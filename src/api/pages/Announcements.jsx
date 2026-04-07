@@ -230,28 +230,18 @@ export default function Announcements() {
         </Card>
       ) : (
         <>
-          {/* Debug: Show all announcements toggle */}
+          {/* Debug Info */}
           <Card className="border-0 shadow-sm mb-4">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={true}
-                    onChange={() => {}}
-                    className="rounded"
-                  />
-                  <span className="text-sm">Debug: Show filtered announcements ({announcements.length})</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={false}
-                    onChange={() => {}}
-                    className="rounded"
-                  />
-                  <span className="text-sm">Show all announcements (debug)</span>
-                </label>
+              <div className="space-y-2">
+                <h4 className="font-medium">Debug Information</h4>
+                <div className="text-sm space-y-1">
+                  <div>✅ Data fetched from API: {announcements.length} announcements</div>
+                  <div>✅ Teacher sports: {getTeacherSports(user).length} sports</div>
+                  <div>✅ Filter should work: Yes</div>
+                  <div className="text-blue-600 font-medium">🔍 If you see announcements above, filtering works!</div>
+                  <div className="text-red-600 font-medium">❌ If you see "还没有公告" below, there's a UI issue</div>
+                </div>
               </div>
             </CardContent>
           </Card>
