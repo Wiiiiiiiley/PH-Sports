@@ -34,7 +34,7 @@ export default function Announcements() {
 
   // Fetch announcements - teachers see all announcements for their sports, admin sees all
   const { data: announcements = [], isLoading } = useQuery({
-    queryKey: ["announcements", user?.email, user?.sport_coached],
+    queryKey: ["announcements", user?.email, JSON.stringify(user?.sport_coached || [])],
     queryFn: () => {
       if (isAdmin) {
         return api.entities.Announcement.list("-created_at", 100);

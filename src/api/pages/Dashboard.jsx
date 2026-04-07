@@ -35,7 +35,7 @@ export default function Dashboard() {
 
   // Students see their own memberships, teachers see all memberships for their sport(s), admins see all
   const { data: memberships = [] } = useQuery({
-    queryKey: ["memberships", user?.email, user?.sport_coached],
+    queryKey: ["memberships", user?.email, JSON.stringify(user?.sport_coached || [])],
     queryFn: () => {
       if (isAdmin) return api.entities.TeamMembership.list("-created_at", 500);
       if (isTeacher) {
@@ -52,7 +52,7 @@ export default function Dashboard() {
 
   // Training logs - teachers see their sport(s)' logs, students see their own, admins see all
   const { data: logs = [] } = useQuery({
-    queryKey: ["logs-dash", user?.email, user?.sport_coached],
+    queryKey: ["logs-dash", user?.email, JSON.stringify(user?.sport_coached || [])],
     queryFn: () => {
       if (isAdmin) return api.entities.TrainingLog.list("-date", 10);
       if (isTeacher) {
@@ -69,7 +69,7 @@ export default function Dashboard() {
 
   // Bookings - students see all, teachers see their sport(s)' bookings, admins see all
   const { data: bookings = [] } = useQuery({
-    queryKey: ["bookings-dash", user?.sport_coached],
+    queryKey: ["bookings-dash", JSON.stringify(user?.sport_coached || [])],
     queryFn: () => {
       if (isAdmin) return api.entities.VenueBooking.list("-date", 20);
       if (isTeacher) {

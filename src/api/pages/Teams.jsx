@@ -64,7 +64,7 @@ export default function Teams() {
   });
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ["team-announcements", user?.sport_coached],
+    queryKey: ["team-announcements", JSON.stringify(user?.sport_coached || [])],
     queryFn: () => {
       if (isTeacher) {
         const teacherSports = getTeacherSports(user);
