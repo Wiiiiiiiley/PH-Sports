@@ -33,15 +33,26 @@ export default function StudentProfile() {
 
   const { data: memberships = [], isLoading } = useQuery({
     queryKey: ["profile-memberships", user?.email],
-    queryFn: () => api.entities.TeamMembership.filter({ user_email: user.email }),
+    queryFn: () => api.entities.TeamMembership.list("-created_at", 500).then(data =>
+        data.filter(m => m.user_email === user.email)
+      ),
   });
 
   const addMembership = useMutation({
-    mutationFn: (sport) => api.entities.TeamMembership.create({
-      user_email: user.email,
-      user_name: user.full_name,
-      sport,
-    }),
+    mutationFn: async (sport) => {
+      // Get teams to find the team_id for this sport
+      const teams = await api.entities.Team.list();
+      const team = teams.find(t => t.sport === sport);
+      if (!team) {
+        throw new Error(`No team found for sport: ${sport}`);
+      }
+      
+      return api.entities.TeamMembership.create({
+        user_email: user.email,
+        user_name: user.full_name,
+        team_id: team.id,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile-memberships"] });
       toast.success("Joined team!");

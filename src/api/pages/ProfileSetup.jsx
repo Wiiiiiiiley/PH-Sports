@@ -47,12 +47,18 @@ export default function ProfileSetup({ onComplete }) {
     try {
       if (role === "student") {
         await api.auth.updateMe({ role, profile_complete: true, student_id: studentId, grade });
+        
+        // Get teams for selected sports to get team_id
+        const teams = await api.entities.Team.list();
         for (const sport of selectedSports) {
-          await api.entities.TeamMembership.create({
-            user_email: user.email,
-            user_name: user.full_name,
-            sport,
-          });
+          const team = teams.find(t => t.sport === sport);
+          if (team) {
+            await api.entities.TeamMembership.create({
+              user_email: user.email,
+              user_name: user.full_name,
+              team_id: team.id,
+            });
+          }
         }
         setSaving(false);
         onComplete();

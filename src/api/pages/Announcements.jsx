@@ -48,8 +48,8 @@ export default function Announcements() {
         );
       }
       // Students see announcements for their teams
-      return api.entities.TeamMembership.filter({ user_email: user.email }).then(memberships => {
-        const userSports = memberships.map(m => m.sport);
+      return api.entities.TeamMembership.list("-created_at", 500).then(memberships => {
+        const userSports = memberships.filter(m => m.user_email === user.email).map(m => m.sport);
         return api.entities.Announcement.list("-created_at", 100).then(data =>
           data.filter(a => userSports.includes(a.sport))
         );
@@ -85,7 +85,7 @@ export default function Announcements() {
     },
   });
 
-  const handleCreateClick = () => {
+  const handleCreateClick = async () => {
     if (!formData.title.trim()) {
       toast.error("Please enterTitle");
       return;
@@ -95,32 +95,35 @@ export default function Announcements() {
       return;
     }
     if (selectedSports.length === 0) {
-      toast.error("Please select至少一个Sport项目");
+      toast.error("Please select at least one sport project");
       return;
     }
 
-    // Create announcements for each selected sport
-    const promises = selectedSports.map(sport => 
-      createAnnouncement.mutateAsync({
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        sport,
-        priority: formData.priority,
-        teacher_email: user.email,
-        created_at: new Date().toISOString(),
-      })
-    );
-
-    Promise.all(promises)
-      .then(() => {
-        toast.success(`Announcement已Post到 ${selectedSports.length} 个Sport项目！`);
-        setFormData({ title: "", content: "", priority: "normal" });
-        setSelectedSports([]);
-        setIsCreateOpen(false);
-      })
-      .catch((error) => {
-        toast.error(error?.response?.data?.error || "PostFailed，Please重试");
+    try {
+      // Get teams to map sports to team_ids
+      const teams = await api.entities.Team.list();
+      
+      // Create announcements for each selected sport
+      const promises = selectedSports.map(sport => {
+        const team = teams.find(t => t.sport === sport);
+        if (!team) {
+          throw new Error(`No team found for sport: ${sport}`);
+        }
+        
+        return createAnnouncement.mutateAsync({
+          title: formData.title.trim(),
+          content: formData.content.trim(),
+          team_id: team.id, // Use team_id instead of sport
+          priority: formData.priority,
+          teacher_email: user.email,
+          created_at: new Date().toISOString(),
+        });
       });
+
+      await Promise.all(promises);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || "PostFailed, Please try again");
+    }
   };
 
   const handleDelete = (id) => {

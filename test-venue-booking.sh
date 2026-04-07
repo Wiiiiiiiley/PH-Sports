@@ -32,11 +32,11 @@ echo "   Token: ${STUDENT_TOKEN:0:20}..."
 echo ""
 
 # 2. Try to create a venue booking as student
-echo "2️⃣  Creating venue booking as student..."
+echo "2.0  Creating venue booking as student..."
 BOOKING_RESPONSE=$(curl -s -X POST "$API_BASE/venue-bookings?token=$STUDENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "sport": "Basketball",
+    "team_id": "2026-04-07 14:22:12-basketball",
     "venue": "Gym A",
     "date": "2026-04-15",
     "time_slot": "15:00",

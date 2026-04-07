@@ -50,7 +50,9 @@ export default function TrainingLog() {
           data.filter(m => teacherSports.includes(m.sport))
         );
       }
-      return api.entities.TeamMembership.filter({ user_email: user.email });
+      return api.entities.TeamMembership.list("-created_at", 500).then(data =>
+        data.filter(m => m.user_email === user.email)
+      );
     },
   });
 
@@ -64,19 +66,32 @@ export default function TrainingLog() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["training-logs", activeSport, user?.email],
     queryFn: () => {
-      if (isTeacher) return api.entities.TrainingLog.filter({ sport: activeSport }, "-date", 100);
-      return api.entities.TrainingLog.filter({ user_email: user.email, sport: activeSport }, "-date", 100);
+      if (isTeacher) return api.entities.TrainingLog.list("-date", 100).then(data =>
+        data.filter(log => log.sport === activeSport)
+      );
+      return api.entities.TrainingLog.list("-date", 100).then(data =>
+        data.filter(log => log.user_email === user.email && log.sport === activeSport)
+      );
     },
     enabled: !!activeSport,
   });
 
   const createLog = useMutation({
-    mutationFn: (data) => api.entities.TrainingLog.create({
-      ...data,
-      user_email: user.email,
-      user_name: user.full_name,
-      sport: activeSport,
-    }),
+    mutationFn: async (data) => {
+      // Find team for the active sport to get team_id
+      const teams = await api.entities.Team.list();
+      const team = teams.find(t => t.sport === activeSport);
+      if (!team) {
+        throw new Error(`No team found for sport: ${activeSport}`);
+      }
+      
+      return api.entities.TrainingLog.create({
+        ...data,
+        user_email: user.email,
+        user_name: user.full_name,
+        team_id: team.id, // Use team_id instead of sport
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["training-logs"] });
       setFormOpen(false);

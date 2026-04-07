@@ -46,7 +46,9 @@ export default function Dashboard() {
           data.filter(m => teacherSports.includes(m.sport))
         );
       }
-      return api.entities.TeamMembership.filter({ user_email: user.email });
+      return api.entities.TeamMembership.list("-created_at", 500).then(data =>
+        data.filter(m => m.user_email === user.email)
+      );
     },
   });
 
@@ -63,7 +65,9 @@ export default function Dashboard() {
           data.filter(l => teacherSports.includes(l.sport)).slice(0, 10)
         );
       }
-      return api.entities.TrainingLog.filter({ user_email: user.email }, "-date", 5);
+      return api.entities.TrainingLog.list("-date", 5).then(data =>
+        data.filter(log => log.user_email === user.email)
+      );
     },
   });
 

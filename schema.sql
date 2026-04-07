@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS venue_bookings (
     id TEXT PRIMARY KEY,
     booked_by_email TEXT NOT NULL,
     booked_by_name TEXT,
+    team_id TEXT NOT NULL,
     sport TEXT NOT NULL,
     venue TEXT NOT NULL,
     date DATE NOT NULL,
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS announcements (
     id TEXT PRIMARY KEY,
     teacher_email TEXT,
     teacher_name TEXT,
+    team_id TEXT,
     sport TEXT,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
@@ -96,6 +98,7 @@ CREATE TABLE IF NOT EXISTS training_logs (
     id TEXT PRIMARY KEY,
     user_email TEXT,
     user_name TEXT,
+    team_id TEXT NOT NULL,
     sport TEXT,
     date DATE NOT NULL,
     duration INTEGER, -- in minutes

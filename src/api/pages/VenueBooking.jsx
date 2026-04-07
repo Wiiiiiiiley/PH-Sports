@@ -59,7 +59,9 @@ export default function VenueBooking() {
     queryKey: ["my-sport-memberships"],
     queryFn: () => {
       if (isTeacher || isAdmin) return Promise.resolve([]);
-      return api.entities.TeamMembership.filter({ user_email: user.email });
+      return api.entities.TeamMembership.list("-created_at", 500).then(data =>
+        data.filter(m => m.user_email === user.email)
+      );
     },
   });
 
@@ -115,20 +117,30 @@ export default function VenueBooking() {
   };
 
   const handleSubmitBooking = () => {
-    if (!bookSport || !bookVenue || !bookPurpose || !bookerName.trim()) {
-      toast.error("Please fill all fields including your name");
+    if (!bookSport || !bookVenue || !selectedDate || !selectedTime) {
+      toast.error("Please fill all required fields");
       return;
     }
-    createBooking.mutate({
-      booked_by_email: user.email,
-      booked_by_name: bookerName.trim(),
-      sport: bookSport,
-      venue: bookVenue,
-      date: selectedDate,
-      time_slot: selectedTime,
-      duration: parseInt(bookDuration),
-      purpose: bookPurpose,
-      status: "pending",
+    
+    // Find team for the selected sport to get team_id
+    api.entities.Team.list().then(teams => {
+      const team = teams.find(t => t.sport === bookSport);
+      if (!team) {
+        toast.error(`No team found for sport: ${bookSport}`);
+        return;
+      }
+      
+      createBooking.mutate({
+        booked_by_email: user.email,
+        booked_by_name: bookerName.trim(),
+        team_id: team.id, // Use team_id instead of sport
+        venue: bookVenue,
+        date: selectedDate,
+        time_slot: selectedTime,
+        duration: parseInt(bookDuration),
+        purpose: bookPurpose,
+        status: "pending",
+      });
     });
   };
 

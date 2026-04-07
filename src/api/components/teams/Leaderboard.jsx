@@ -35,19 +35,30 @@ export default function Leaderboard({ sport, members }) {
 
   const { data: logs = [] } = useQuery({
     queryKey: ["leaderboard-logs", sport, selectedMonth],
-    queryFn: () => {
+    queryFn: async () => {
       const [year, month] = selectedMonth.split("-");
       const start = `${year}-${month}-01`;
       // End: first day of next month
       const nextMonth = new Date(parseInt(year), parseInt(month), 1);
       const end = format(nextMonth, "yyyy-MM-dd");
       
-      console.log('🔥 Training logs query - sport:', sport, 'month:', selectedMonth);
-      // All users use the same API to fetch training logs for the sport
-      // Privacy protection is handled in the display logic
-      return api.entities.TrainingLog.filter({ sport }, "-date", 500).then(data => {
-        console.log('🔥 Training logs response:', data);
-        return data;
+      console.log('Leaderboard - Getting team for sport:', sport);
+      
+      // Get team_id for the sport
+      const teams = await api.entities.Team.list();
+      const team = teams.find(t => t.sport === sport);
+      if (!team) {
+        console.warn('No team found for sport:', sport);
+        return [];
+      }
+      
+      console.log('Leaderboard - Using team_id:', team.id, 'for sport:', sport);
+      
+      // Use team_id to fetch training logs
+      return api.entities.TrainingLog.list("-date", 500).then(data => {
+        console.log('Leaderboard - Training logs response:', data);
+        // Filter by team_id (since backend now uses team_id)
+        return data.filter(log => log.team_id === team.id);
       });
     },
     enabled: !!sport,

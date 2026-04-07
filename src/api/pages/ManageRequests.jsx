@@ -43,10 +43,7 @@ export default function ManageRequests() {
       if (user.role === 'admin') return api.entities.VenueBooking.list("-created_at", 500);
       const teacherSports = getTeacherSports();
       if (teacherSports.length === 0) return [];
-      if (teacherSports.length === 1) {
-        return api.entities.VenueBooking.filter({ sport: teacherSports[0] }, "-created_at", 100);
-      }
-      // For multiple sports, fetch all and filter client-side
+      // Fetch all bookings and filter client-side by sport
       return api.entities.VenueBooking.list("-created_at", 200).then(data =>
         data.filter(b => teacherSports.includes(b.sport))
       );

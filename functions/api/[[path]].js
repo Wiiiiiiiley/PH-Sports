@@ -551,8 +551,17 @@ export async function onRequest(context) {
                         if (sports.length === 0) {
                             return jsonResponse({ error: 'Not found' }, 404); // Return 404 if no sports coached
                         }
-                        const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', currentUser.sport_coached);
-                        const row = await env.DB.prepare(`SELECT * FROM training_logs WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
+                        
+                        // Get all teams for the teacher's sports
+                        const sportPlaceholders = sports.map(() => '?').join(',');
+                        const teams = await env.DB.prepare(`SELECT id FROM teams WHERE sport IN (${sportPlaceholders})`).bind(...sports).all();
+                        if (teams.results.length === 0) {
+                            return jsonResponse({ error: 'Not found' }, 404);
+                        }
+                        const teamIds = teams.results.map(t => t.id);
+                        const teamPlaceholders = teamIds.map(() => '?').join(',');
+                        
+                        const row = await env.DB.prepare(`SELECT * FROM training_logs WHERE id = ? AND team_id IN (${teamPlaceholders})`).bind(id, ...teamIds).first();
                         return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
                     }
                     return getEntity({ allowedWhereColumns: ['id', 'user_email'], forcedWhere: { user_email: currentUser.email } });
@@ -567,15 +576,19 @@ export async function onRequest(context) {
                     const sport = url.searchParams.get('sport');
                     if (!sport) return jsonResponse({ error: 'sport parameter required for leaderboard' }, 400);
                     
+                    // Get team for the sport
+                    const team = await env.DB.prepare('SELECT id FROM teams WHERE sport = ?').bind(sport).first();
+                    if (!team) return jsonResponse({ error: 'Team not found for sport' }, 404);
+                    
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
-                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs WHERE sport = ? ${orderLimit}`).bind(sport).all();
-                    console.log('Training logs - student leaderboard query, sport:', sport, 'results:', results.length);
+                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs WHERE team_id = ? ${orderLimit}`).bind(team.id).all();
+                    console.log('Training logs - student leaderboard query, team_id:', team.id, 'results:', results.length);
                     return jsonResponse(results);
                 }
 
                 if (isAdmin) {
                     return listEntity({
-                        allowedWhereColumns: ['id', 'user_email', 'user_name', 'sport', 'date'],
+                        allowedWhereColumns: ['id', 'user_email', 'user_name', 'team_id', 'date'],
                         allowedSortColumns: ['created_at', 'date'],
                         forcedWhere: null
                     });
@@ -588,16 +601,24 @@ export async function onRequest(context) {
                         return jsonResponse([]); // Return empty if no sports coached
                     }
                     
-                    // Simplified query: fetch all and filter in JavaScript
+                    // Get all teams for the teacher's sports
+                    const sportPlaceholders = sports.map(() => '?').join(',');
+                    const teams = await env.DB.prepare(`SELECT id FROM teams WHERE sport IN (${sportPlaceholders})`).bind(...sports).all();
+                    if (teams.results.length === 0) {
+                        return jsonResponse([]);
+                    }
+                    const teamIds = teams.results.map(t => t.id);
+                    const teamPlaceholders = teamIds.map(() => '?').join(',');
+                    
+                    // Fetch training logs for teacher's teams
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
-                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs ${orderLimit}`).all();
-                    const filteredResults = results.filter(log => sports.includes(log.sport));
-                    console.log('Training logs - filtered results:', filteredResults.length);
-                    return jsonResponse(filteredResults);
+                    const { results } = await env.DB.prepare(`SELECT * FROM training_logs WHERE team_id IN (${teamPlaceholders}) ${orderLimit}`).bind(...teamIds).all();
+                    console.log('Training logs - filtered results:', results.length);
+                    return jsonResponse(results);
                 }
                 // Students can view all training logs (for leaderboard display)
                 return listEntity({
-                    allowedWhereColumns: ['id', 'user_email', 'sport', 'date'],
+                    allowedWhereColumns: ['id', 'user_email', 'team_id', 'date'],
                     allowedSortColumns: ['created_at', 'date'],
                     forcedWhere: null
                 });
@@ -643,15 +664,22 @@ export async function onRequest(context) {
                         if (teacherSports.length === 0) {
                             return jsonResponse({ error: 'Not found' }, 404); // Return 404 if no sports coached
                         }
-                        const { sql: sportSql, bindings: sportBindings } = buildSportFilter('sport', teacherSports);
-                        const row = await env.DB.prepare(`SELECT * FROM venue_bookings WHERE id = ? ${sportSql}`).bind(id, ...sportBindings).first();
+                        // Get all teams for the teacher's sports
+                        const sportPlaceholders = teacherSports.map(() => '?').join(',');
+                        const teams = await env.DB.prepare(`SELECT id FROM teams WHERE sport IN (${sportPlaceholders})`).bind(...teacherSports).all();
+                        if (teams.results.length === 0) {
+                            return jsonResponse({ error: 'Not found' }, 404);
+                        }
+                        const teamIds = teams.results.map(t => t.id);
+                        const teamPlaceholders = teamIds.map(() => '?').join(',');
+                        const row = await env.DB.prepare(`SELECT * FROM venue_bookings WHERE id = ? AND team_id IN (${teamPlaceholders})`).bind(id, ...teamIds).first();
                         return row ? jsonResponse(row) : jsonResponse({ error: 'Not found' }, 404);
                     }
                     return getEntity({ allowedWhereColumns: ['id'], forcedWhere: null });
                 }
                 if (isAdmin) {
                     return listEntity({
-                        allowedWhereColumns: ['id', 'sport', 'date', 'status', 'booked_by_email'],
+                        allowedWhereColumns: ['id', 'team_id', 'date', 'status', 'booked_by_email'],
                         allowedSortColumns: ['created_at', 'date'],
                         forcedWhere: null
                     });
@@ -664,15 +692,23 @@ export async function onRequest(context) {
                         return jsonResponse([]); // Return empty if no sports coached
                     }
                     
-                    // Simplified query: fetch all and filter in JavaScript
+                    // Get all teams for the teacher's sports
+                    const sportPlaceholders = teacherSports.map(() => '?').join(',');
+                    const teams = await env.DB.prepare(`SELECT id FROM teams WHERE sport IN (${sportPlaceholders})`).bind(...teacherSports).all();
+                    if (teams.results.length === 0) {
+                        return jsonResponse([]);
+                    }
+                    const teamIds = teams.results.map(t => t.id);
+                    const teamPlaceholders = teamIds.map(() => '?').join(',');
+                    
+                    // Fetch bookings for teacher's teams
                     const orderLimit = buildOrderLimit(sort, limit, ['created_at', 'date']);
-                    const { results } = await env.DB.prepare(`SELECT * FROM venue_bookings ${orderLimit}`).all();
-                    const filteredResults = results.filter(booking => teacherSports.includes(booking.sport));
-                    console.log('Venue bookings - filtered results:', filteredResults.length);
-                    return jsonResponse(filteredResults);
+                    const { results } = await env.DB.prepare(`SELECT * FROM venue_bookings WHERE team_id IN (${teamPlaceholders}) ${orderLimit}`).bind(...teamIds).all();
+                    console.log('Venue bookings - filtered results:', results.length);
+                    return jsonResponse(results);
                 }
                 return listEntity({
-                    allowedWhereColumns: ['id', 'sport', 'date', 'status'],
+                    allowedWhereColumns: ['id', 'team_id', 'date', 'status'],
                     allowedSortColumns: ['created_at', 'date'],
                     forcedWhere: null
                 });
@@ -718,8 +754,12 @@ export async function onRequest(context) {
                 }
 
                 if (isTeacher) {
+                    // Get team info for the booking to validate teacher permissions
+                    const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(booking.team_id).first();
+                    if (!team) return jsonResponse({ error: 'Team not found' }, 404);
+                    
                     const teacherSports = parseJsonArray(currentUser.sport_coached);
-                    if (!teacherSports.includes(booking.sport)) return jsonResponse({ error: 'Forbidden' }, 403);
+                    if (!teacherSports.includes(team.sport)) return jsonResponse({ error: 'Forbidden' }, 403);
                     return updateEntity(body, ['status', 'teacher_comment'], null, null);
                 }
 
@@ -816,7 +856,7 @@ export async function onRequest(context) {
         if (tableName === 'announcements') {
             if (method === 'GET') {
                 return listEntity({
-                    allowedWhereColumns: ['id', 'sport', 'teacher_email', 'teacher_name', 'priority'],
+                    allowedWhereColumns: ['id', 'team_id', 'teacher_email', 'teacher_name', 'priority'],
                     allowedSortColumns: ['created_at'],
                     forcedWhere: null
                 });
@@ -824,12 +864,18 @@ export async function onRequest(context) {
             if (method === 'POST') {
                 if (!isTeacher && !isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
                 const body = await readJsonBody();
-                if (!body || !body.title || !body.content || !body.sport) {
-                    return jsonResponse({ error: 'title, content, sport required' }, 400);
+                if (!body || !body.title || !body.content || !body.team_id) {
+                    return jsonResponse({ error: 'title, content, team_id required' }, 400);
                 }
+                
+                // Get team to verify it exists and get sport info
+                const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(body.team_id).first();
+                if (!team) return jsonResponse({ error: 'Team not found' }, 404);
+                
                 return createEntity(body, ['id', 'teacher_email', 'teacher_name', 'sport', 'title', 'content', 'priority', 'created_at'], {
                     teacher_email: currentUser.email,
                     teacher_name: currentUser.full_name,
+                    sport: team.sport
                 });
             }
             if (method === 'DELETE' && id) {

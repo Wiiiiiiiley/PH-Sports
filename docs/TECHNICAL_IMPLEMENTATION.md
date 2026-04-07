@@ -38,15 +38,19 @@ if (method === 'POST') {
 if (method === 'POST') {
     // Students can create bookings as pending, teachers and admins create as approved
     const body = await readJsonBody();
-    if (!body || !body.sport || !body.venue || !body.date || !body.time_slot) {
-        return jsonResponse({ error: 'sport, venue, date, time_slot required' }, 400);
+    if (!body || !body.team_id || !body.venue || !body.date || !body.time_slot) {
+        return jsonResponse({ error: 'team_id, venue, date, time_slot required' }, 400);
     }
-    const sport = String(body.sport);
+    const teamId = String(body.team_id);
+    
+    // Get team and sport info
+    const team = await env.DB.prepare('SELECT * FROM teams WHERE id = ?').bind(teamId).first();
+    if (!team) return jsonResponse({ error: 'Team not found' }, 404);
     
     // Students must be team members, teachers and admins don't need to be
     if (!isTeacher && !isAdmin) {
-        const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND sport = ?').bind(currentUser.email, sport).first();
-        if (!member) return jsonResponse({ error: 'Not a member of this sport team' }, 403);
+        const member = await env.DB.prepare('SELECT * FROM team_memberships WHERE user_email = ? AND team_id = ?').bind(currentUser.email, teamId).first();
+        if (!member) return jsonResponse({ error: 'You are not a member of this team' }, 403);
     }
 
     return createEntity(
@@ -55,6 +59,7 @@ if (method === 'POST') {
         {
             booked_by_email: currentUser.email,
             booked_by_name: body.booked_by_name || currentUser.full_name,
+            sport: team.sport,
             status: (isTeacher || isAdmin) ? 'approved' : 'pending'
         }
     );
@@ -123,8 +128,8 @@ const createBooking = useMutation({
                      │
                      ▼
         ┌──────────────────────────┐
-        │ 验证请求数据              │
-        │ (sport, venue等)          │
+        │ 验证请求数据     | Verify request data      |
+        | (team_id, venue etc.)     |   │
         └────────┬─────────────────┘
                  │
             ┌────▼─────┐
@@ -164,12 +169,13 @@ const createBooking = useMutation({
 ```sql
 CREATE TABLE venue_bookings (
     id TEXT PRIMARY KEY,
-    booked_by_email TEXT NOT NULL,      -- 预订人邮箱 (学生或教师)
-    booked_by_name TEXT,                -- 预订人姓名
-    sport TEXT NOT NULL,                -- 运动类型
-    venue TEXT NOT NULL,                -- 场地名称
-    date DATE NOT NULL,                 -- 预订日期
-    time_slot TEXT NOT NULL,            -- 时间段 (HH:MM)
+    booked_by_email TEXT NOT NULL,      -- Booking person email (student or teacher)
+    booked_by_name TEXT,                -- Booking person name
+    team_id TEXT NOT NULL,              -- Team identifier
+    sport TEXT NOT NULL,                -- Sport type (derived from team)
+    venue TEXT NOT NULL,                -- Venue name
+    date DATE NOT NULL,                 -- Booking date
+    time_slot TEXT NOT NULL,            -- Time slot (HH:MM)
     duration INTEGER,                   -- 持续时间 (分钟)
     purpose TEXT,                       -- 预订用途
     status TEXT DEFAULT 'pending',      -- 'pending', 'approved', 'rejected'
@@ -186,10 +192,10 @@ CREATE TABLE venue_bookings (
 **请求** ：
 ```json
 {
-    "sport": "Basketball",          // 必需
-    "venue": "Gym A",               // 必需
-    "date": "2026-04-15",           // 必需 (YYYY-MM-DD)
-    "time_slot": "15:00",           // 必需 (HH:MM)
+    "team_id": "2026-04-07-14:22:12-basketball",  // Required
+    "venue": "Gym A",               // Required
+    "date": "2026-04-15",           // Required (YYYY-MM-DD)
+    "time_slot": "15:00",           // Required (HH:MM)
     "duration": 120,                // 可选 (分钟, 默认值 = body中的值)
     "purpose": "Team training",     // 可选
     "booked_by_name": "John Doe"    // 可选 (默认值 = 当前用户姓名)
@@ -202,6 +208,7 @@ CREATE TABLE venue_bookings (
     "id": "uuid-xxx",
     "booked_by_email": "student@example.com",
     "booked_by_name": "John Doe",
+    "team_id": "2026-04-07-14:22:12-basketball",
     "sport": "Basketball",
     "venue": "Gym A",
     "date": "2026-04-15",
@@ -217,7 +224,7 @@ CREATE TABLE venue_bookings (
 **错误响应（403）** ：
 ```json
 {
-    "error": "Not a member of this sport team"
+    "error": "You are not a member of this team"
 }
 ```
 

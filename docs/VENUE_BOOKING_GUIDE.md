@@ -24,7 +24,7 @@
 | 字段 | 说明 | 示例 |
 |------|------|------|
 | **Your Name** | 你的姓名 | 张三 |
-| **Sport** | 运动类型 | 篮球、排球等 |
+| **Team ID** | Team identifier | 2026-04-07-14:22:12-basketball |
 | **Venue** | 场地名称 | 体育馆 A、外场 B |
 | **Duration** | 预订时长（分钟） | 60（1小时）、90、120 |
 | **Purpose** | 预订用途 | 队伍训练、个人练习、比赛 |
@@ -120,6 +120,7 @@ CREATE TABLE venue_bookings (
     id TEXT PRIMARY KEY,
     booked_by_email TEXT NOT NULL,
     booked_by_name TEXT,
+    team_id TEXT NOT NULL,
     sport TEXT NOT NULL,
     venue TEXT NOT NULL,
     date DATE NOT NULL,
