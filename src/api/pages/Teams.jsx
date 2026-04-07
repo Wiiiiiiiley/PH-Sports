@@ -45,7 +45,7 @@ export default function Teams() {
   };
 
   const { data: memberships = [] } = useQuery({
-    queryKey: ["memberships"],
+    queryKey: ["memberships", user?.email, user?.role],
     queryFn: () => {
       if (isTeacher) {
         const teacherSports = getTeacherSports(user);

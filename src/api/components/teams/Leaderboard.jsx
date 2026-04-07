@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import apiClient from "../../apiClient";
 import { useAuth } from "@/lib/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -43,14 +42,8 @@ export default function Leaderboard({ sport, members }) {
       const nextMonth = new Date(parseInt(year), parseInt(month), 1);
       const end = format(nextMonth, "yyyy-MM-dd");
       
-      // For students, fetch all training logs for the sport to build leaderboard
-      // Privacy will be handled in the display logic
-      if (user?.role === "student") {
-        // Use the special leaderboard query endpoint
-        return apiClient.get(`/training-logs?for_leaderboard=true&sport=${encodeURIComponent(sport)}&sort=-date&limit=500`);
-      }
-      
-      // Teachers and admins use normal filtering
+      // All users use the same API to fetch training logs for the sport
+      // Privacy protection is handled in the display logic
       return api.entities.TrainingLog.filter({ sport }, "-date", 500);
     },
     enabled: !!sport,
@@ -170,7 +163,11 @@ export default function Leaderboard({ sport, members }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{entry.name}</p>
-              <p className="text-xs text-muted-foreground">{entry.sessions} session{entry.sessions !== 1 ? "s" : ""}</p>
+              {entry.sessions > 0 || entry.email === user?.email ? (
+                <p className="text-xs text-muted-foreground">{entry.sessions} session{entry.sessions !== 1 ? "s" : ""}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground opacity-50">No activity this month</p>
+              )}
             </div>
             <div className="text-right shrink-0">
               <p className="text-sm font-bold">{typeof entry.score === "number" ? entry.score.toLocaleString() : entry.score}</p>
