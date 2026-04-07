@@ -41,6 +41,16 @@ export default function Leaderboard({ sport, members }) {
       // End: first day of next month
       const nextMonth = new Date(parseInt(year), parseInt(month), 1);
       const end = format(nextMonth, "yyyy-MM-dd");
+      
+      // For students, fetch all training logs for the sport to build leaderboard
+      // Privacy will be handled in the display logic
+      if (user?.role === "student") {
+        return api.entities.TrainingLog.list("-date", 500).then(allLogs =>
+          allLogs.filter(log => log.sport === sport)
+        );
+      }
+      
+      // Teachers and admins use normal filtering
       return api.entities.TrainingLog.filter({ sport }, "-date", 500);
     },
     enabled: !!sport,
