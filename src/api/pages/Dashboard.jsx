@@ -193,7 +193,7 @@ export default function Dashboard() {
         <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Upcoming Venue Bookings</CardTitle>
+            <CardTitle className="text-base">已预定场地</CardTitle>
             <Link to="/booking" className="text-xs text-primary font-medium hover:underline">View calendar</Link>
           </div>
         </CardHeader>
