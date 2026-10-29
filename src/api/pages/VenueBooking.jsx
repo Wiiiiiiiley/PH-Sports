@@ -222,7 +222,7 @@ export default function VenueBooking() {
           <div className="space-y-3">
             <div>
               <Label>Your Name</Label>
-              <Input value={bookerName} onChange={e => setBookerName(e.target.value)} placeholder="Enter your full name" />
+              <Input value={bookerName} readOnly aria-readonly="true" />
             </div>
             <div>
               <Label>Sport</Label>

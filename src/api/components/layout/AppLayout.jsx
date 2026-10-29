@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { api } from "@/api";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard, Users, ClipboardList, CalendarDays,
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const studentNav = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "My Teams", path: "/teams", icon: Users },
   { label: "Training Log", path: "/training", icon: ClipboardList },
   { label: "Venue Booking", path: "/booking", icon: CalendarDays },
@@ -18,7 +17,7 @@ const studentNav = [
 ];
 
 const teacherNav = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "My Teams", path: "/teams", icon: Users },
   { label: "Training Logs", path: "/training", icon: ClipboardList },
   { label: "Manage Requests", path: "/requests", icon: CheckSquare },
@@ -26,7 +25,7 @@ const teacherNav = [
 ];
 
 const adminNav = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Admin Panel", path: "/admin", icon: ShieldCheck },
   { label: "Teams", path: "/teams", icon: Users },
   { label: "Training Logs", path: "/training", icon: ClipboardList },
@@ -36,12 +35,10 @@ const adminNav = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const role = user?.role || "student";
 
   const navItems = role === "teacher" ? teacherNav : role === "admin" ? adminNav : studentNav;
-
-  const handleLogout = () => api.auth.logout();
 
   return (
     <div className="min-h-screen bg-background font-inter">
@@ -52,7 +49,7 @@ export default function AppLayout() {
         </Button>
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-primary" />
-          <span className="font-bold text-foreground">SportSync</span>
+          <span className="font-bold text-foreground">PH Sports</span>
         </div>
         <div className="w-9" />
       </header>
@@ -73,7 +70,7 @@ export default function AppLayout() {
               <Trophy className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground text-lg leading-tight">SportSync</h1>
+              <h1 className="font-bold text-foreground text-lg leading-tight">PH Sports</h1>
               <p className="text-xs text-muted-foreground capitalize">{role}</p>
             </div>
           </div>
@@ -109,7 +106,7 @@ export default function AppLayout() {
             <p className="text-sm font-medium text-foreground truncate">{user?.full_name || "User"}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={handleLogout}>
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={logout}>
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>

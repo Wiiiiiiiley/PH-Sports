@@ -1,37 +1,23 @@
 import axios from 'axios';
-import { appParams } from '@/lib/app-params';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.MODE === 'production' ? '/api' : (appParams.apiBaseUrl || 'http://localhost:8788/api'),
+  baseURL: '/api',
+  withCredentials: true,
+  timeout: 15_000,
   headers: {
     'Content-Type': 'application/json',
+    'X-PH-Sports-Request': '1',
   },
 });
 
-// Request interceptor for adding auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = appParams.token || localStorage.getItem('ph_sports_access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for handling common errors
 apiClient.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Handle unauthorized access (e.g., redirect to login)
-      console.error('Unauthorized access - potential token expiration');
+  response => response.data,
+  error => {
+    if (error.response?.status === 401 && !error.config?.url?.startsWith('/auth/')) {
+      window.dispatchEvent(new Event('ph-sports:session-expired'));
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

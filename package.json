@@ -9,7 +9,14 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "check:auth": "node scripts/check-auth.mjs",
+    "preview": "vite preview",
+    "check:server-auth": "node scripts/check-server-auth.mjs",
+    "check:access": "node scripts/check-access.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply ph-sports-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply ph-sports-db --remote",
+    "account:provision": "node scripts/provision-account.mjs",
+    "dev:full": "wrangler pages dev dist --port 8788"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",

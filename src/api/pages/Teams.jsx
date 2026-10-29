@@ -33,7 +33,7 @@ export default function Teams() {
     queryFn: () => {
       if (isTeacher) return api.entities.TeamMembership.filter({ sport: user.sport_coached });
       if (isAdmin) return api.entities.TeamMembership.list("-created_date", 500);
-      return api.entities.TeamMembership.filter({ user_email: user.email });
+      return api.entities.TeamMembership.list("-created_date", 500);
     },
   });
 

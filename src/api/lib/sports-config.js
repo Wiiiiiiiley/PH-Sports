@@ -75,5 +75,3 @@ export const LEADERBOARD_METRIC = {
   "Ultimate Frisbee": { label: "Throws Completed", compute: (logs) => logs.reduce((s, l) => s + (l.data?.throws_completed || 0), 0) },
   "Billiards Club": { label: "Frames Won", compute: (logs) => logs.reduce((s, l) => s + (l.data?.frames_won || 0), 0) }
 };
-
-export const ADMIN_EMAIL = "admin@sportsync.edu";

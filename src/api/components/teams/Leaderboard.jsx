@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { LEADERBOARD_METRIC, SPORT_COLORS } from "@/lib/sports-config";
 import { format, startOfMonth, subMonths } from "date-fns";
 
@@ -27,57 +27,18 @@ function getMonthOptions() {
   return months;
 }
 
-export default function Leaderboard({ sport, members }) {
+export default function Leaderboard({ sport }) {
   const months = useMemo(() => getMonthOptions(), []);
-  const [selectedMonth, setSelectedMonth] = React.useState(months[0].value);
+  const [selectedMonth, setSelectedMonth] = useState(months[0].value);
 
-  const { data: logs = [] } = useQuery({
-    queryKey: ["leaderboard-logs", sport, selectedMonth],
-    queryFn: () => {
-      const [year, month] = selectedMonth.split("-");
-      const start = `${year}-${month}-01`;
-      // End: first day of next month
-      const nextMonth = new Date(parseInt(year), parseInt(month), 1);
-      const end = format(nextMonth, "yyyy-MM-dd");
-      return api.entities.TrainingLog.filter({ sport }, "-date", 500);
-    },
+  const { data: rows = [], isError } = useQuery({
+    queryKey: ["training-leaderboard", sport, selectedMonth],
+    queryFn: () => api.entities.TrainingLog.leaderboard(sport, selectedMonth),
     enabled: !!sport,
   });
-
+  const ranked = rows.map(row => ({ ...row, name: row.user_name, email: row.user_email }));
   const metric = LEADERBOARD_METRIC[sport];
   const color = SPORT_COLORS[sport];
-
-  const ranked = useMemo(() => {
-    // Filter logs to selected month
-    const [year, month] = selectedMonth.split("-");
-    const monthLogs = logs.filter(l => {
-      const d = l.date?.slice(0, 7); // "yyyy-MM"
-      return d === selectedMonth;
-    });
-
-    // Group by member
-    const byMember = {};
-    members.forEach(m => {
-      byMember[m.user_email] = { name: m.user_name, email: m.user_email, logs: [] };
-    });
-    monthLogs.forEach(l => {
-      if (byMember[l.user_email]) {
-        byMember[l.user_email].logs.push(l);
-      } else {
-        byMember[l.user_email] = { name: l.user_name, email: l.user_email, logs: [l] };
-      }
-    });
-
-    const entries = Object.values(byMember).map(m => ({
-      name: m.name,
-      email: m.email,
-      score: metric ? metric.compute(m.logs) : m.logs.length,
-      sessions: m.logs.length,
-    }));
-
-    entries.sort((a, b) => b.score - a.score);
-    return entries.map((e, i) => ({ ...e, rank: i + 1 }));
-  }, [logs, members, selectedMonth, metric]);
 
   const isCurrentMonth = selectedMonth === months[0].value;
 
@@ -109,10 +70,11 @@ export default function Leaderboard({ sport, members }) {
       </p>
 
       <div className="space-y-2">
-        {ranked.length === 0 && (
+        {isError && <p role="alert" className="text-sm text-destructive">We could not load the leaderboard. Please try again.</p>}
+        {!isError && ranked.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">No activity logged this month yet</p>
         )}
-        {ranked.map((entry, idx) => (
+        {ranked.map(entry => (
           <div
             key={entry.email}
             className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
